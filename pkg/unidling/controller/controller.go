@@ -104,26 +104,55 @@ func NewUnidlingController(scaleNS kextclient.ScalesGetter, endptsNS kclient.End
 		&kapi.Event{},
 		resyncPeriod,
 		framework.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				event := obj.(*kapi.Event)
-				unidlingController.enqueueEvent(event)
-			},
-			UpdateFunc: func(oldObj interface{}, newObj interface{}) {
-				// retrigger on new last-seen times
-				event := newObj.(*kapi.Event)
-				unidlingController.enqueueEvent(event)
-			},
-			DeleteFunc: func(obj interface{}) {
-				// this is just to clean up our cache of the last seen times
-				event := obj.(*kapi.Event)
-				unidlingController.clearEventFromCache(event)
-			},
+			AddFunc:    unidlingController.addEvent,
+			UpdateFunc: unidlingController.updateEvent,
+			// this is just to clean up our cache of the last seen times
+			DeleteFunc: unidlingController.checkAndClearFromCache,
 		},
 	)
 
 	unidlingController.controller = controller
 
 	return unidlingController
+}
+
+func (c *UnidlingController) addEvent(obj interface{}) {
+	evt, ok := obj.(*kapi.Event)
+	if !ok {
+		utilruntime.HandleError(fmt.Errorf("got non-Event object in event action: %v", obj))
+		return
+	}
+
+	c.enqueueEvent(evt)
+}
+
+func (c *UnidlingController) updateEvent(oldObj, newObj interface{}) {
+	evt, ok := newObj.(*kapi.Event)
+	if !ok {
+		utilruntime.HandleError(fmt.Errorf("got non-Event object in event action: %v", newObj))
+		return
+	}
+
+	c.enqueueEvent(evt)
+}
+
+func (c *UnidlingController) checkAndClearFromCache(obj interface{}) {
+	evt, objIsEvent := obj.(*kapi.Event)
+	if !objIsEvent {
+		tombstone, objIsTombstone := obj.(cache.DeletedFinalStateUnknown)
+		if !objIsTombstone {
+			utilruntime.HandleError(fmt.Errorf("got non-event, non-tombstone object in event action: %v", obj))
+			return
+		}
+
+		evt, objIsEvent = tombstone.Obj.(*kapi.Event)
+		if !objIsEvent {
+			utilruntime.HandleError(fmt.Errorf("tombstone contained object that is not an Event in event action: %v", obj))
+			return
+		}
+	}
+
+	c.clearEventFromCache(evt)
 }
 
 // clearEventFromCache removes the entry for the given event from the lastFiredCache.
@@ -267,11 +296,12 @@ func (c *UnidlingController) handleRequest(info types.NamespacedName, lastFired 
 		targetScalablesSet[v] = struct{}{}
 	}
 
-	deleteIdledAtAnnotation := func(annotations map[string]string) {
+	deleteIdlingAnnotations := func(_ int32, annotations map[string]string) {
 		delete(annotations, unidlingapi.IdledAtAnnotation)
+		delete(annotations, unidlingapi.PreviousScaleAnnotation)
 	}
 
-	scaleAnnotater := unidlingutil.NewScaleAnnotater(c.scaleNamespacer, c.dcNamespacer, c.rcNamespacer, deleteIdledAtAnnotation)
+	scaleAnnotater := unidlingutil.NewScaleAnnotater(c.scaleNamespacer, c.dcNamespacer, c.rcNamespacer, deleteIdlingAnnotations)
 
 	for _, scalableRef := range targetScalables {
 		var scale *kextapi.Scale

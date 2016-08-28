@@ -346,6 +346,12 @@ Manage nodes - list pods, evacuate, or mark ready
 	# Migrate selected pods
 	oc adm manage-node <mynode> --evacuate --pod-selector="<service=myapp>"
 
+	# Migrate selected pods, use a grace period of 60 seconds
+	oc adm manage-node <mynode> --evacuate --grace-period=60 --pod-selector="<service=myapp>"
+
+	# Migrate selected pods not backed by replication controller
+	oc adm manage-node <mynode> --evacuate --force --pod-selector="<service=myapp>"
+
 	# Show pods that will be migrated
 	oc adm manage-node <mynode> --evacuate --dry-run --pod-selector="<service=myapp>"
 
@@ -403,6 +409,22 @@ Update the stored version of API objects
 ====
 
 
+== oc adm pod-network isolate-projects
+Isolate project network
+
+====
+
+[options="nowrap"]
+----
+	# Provide isolation for project p1
+	oc adm pod-network isolate-projects <p1>
+
+	# Allow all projects with label name=top-secret to have their own isolated project network
+	oc adm pod-network isolate-projects --selector='name=top-secret'
+----
+====
+
+
 == oc adm pod-network join-projects
 Join project network
 
@@ -436,16 +458,16 @@ Make project network global
 
 
 == oc adm policy add-role-to-user
-Add users or serviceaccounts to a role in the current project
+Add a role to users or serviceaccounts for the current project
 
 ====
 
 [options="nowrap"]
 ----
-  # Add the 'view' role to user1 in the current project
+  # Add the 'view' role to user1 for the current project
   oc adm policy add-role-to-user view user1
 
-  # Add the 'edit' role to serviceaccount1 in the current project
+  # Add the 'edit' role to serviceaccount1 for the current project
   oc adm policy add-role-to-user edit -z serviceaccount1
 ----
 ====
@@ -1728,9 +1750,6 @@ Create a new application
   # List all local templates and image streams that can be used to create an app
   oc new-app --list
 
-  # Search all templates, image streams, and Docker images for the ones that match "ruby"
-  oc new-app --search ruby
-
   # Create an application based on the source code in the current git repository (with a public remote)
   # and a Docker image
   oc new-app . --docker-image=repo/langimage
@@ -1756,10 +1775,10 @@ Create a new application
   # Create an application based on a template file, explicitly setting a parameter value
   oc new-app --file=./example/myapp/template.json --param=MYSQL_USER=admin
 
-  # Search for "mysql" in all image repositories and stored templates
-  oc new-app --search mysql
+  # Search all templates, image streams, and Docker images for the ones that match "ruby"
+  oc new-app --search ruby
 
-  # Search for "ruby", but only in stored templates (--template, --image and --docker-image
+  # Search for "ruby", but only in stored templates (--template, --image-stream and --docker-image
   # can be used to filter search results)
   oc new-app --search --template=ruby
 
@@ -1832,16 +1851,16 @@ Update field(s) of a resource using strategic merge patch.
 
 
 == oc policy add-role-to-user
-Add users or serviceaccounts to a role in the current project
+Add a role to users or serviceaccounts for the current project
 
 ====
 
 [options="nowrap"]
 ----
-  # Add the 'view' role to user1 in the current project
+  # Add the 'view' role to user1 for the current project
   oc policy add-role-to-user view user1
 
-  # Add the 'edit' role to serviceaccount1 in the current project
+  # Add the 'edit' role to serviceaccount1 for the current project
   oc policy add-role-to-user edit -z serviceaccount1
 ----
 ====
@@ -2396,6 +2415,34 @@ Update a probe on a pod template
 
   # Set only the initial-delay-seconds field on all deployments
   oc set probe dc --all --readiness --initial-delay-seconds=30
+----
+====
+
+
+== oc set route-backends
+Update the backends for a route
+
+====
+
+[options="nowrap"]
+----
+  # Print the backends on the route 'web'
+  oc set route-backends web
+
+  # Set two backend services on route 'web' with 2/3rds of traffic going to 'a'
+  oc set route-backends web a=2 b=1
+
+  # Increase the traffic percentage going to b by 10% relative to a
+  oc set route-backends web --adjust b=+10%
+
+  # Set traffic percentage going to b to 10% of the traffic going to a
+  oc set route-backends web --adjust b=10%
+
+  # Set weight of b to 10
+  oc set route-backends web --adjust b=10
+
+  # Set the weight to all backends to zero
+  oc set route-backends web --zero
 ----
 ====
 

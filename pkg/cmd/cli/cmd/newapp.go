@@ -6,8 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	goruntime "runtime"
 	"sort"
 	"strings"
 	"time"
@@ -37,6 +35,7 @@ import (
 	configcmd "github.com/openshift/origin/pkg/config/cmd"
 	newapp "github.com/openshift/origin/pkg/generate/app"
 	newcmd "github.com/openshift/origin/pkg/generate/app/cmd"
+	"github.com/openshift/origin/pkg/generate/git"
 	imageapi "github.com/openshift/origin/pkg/image/api"
 	"github.com/openshift/origin/pkg/util"
 )
@@ -67,9 +66,6 @@ You can use '%[1]s status' to check the progress.`
   # List all local templates and image streams that can be used to create an app
   %[1]s new-app --list
 
-  # Search all templates, image streams, and Docker images for the ones that match "ruby"
-  %[1]s new-app --search ruby
-
   # Create an application based on the source code in the current git repository (with a public remote)
   # and a Docker image
   %[1]s new-app . --docker-image=repo/langimage
@@ -95,10 +91,10 @@ You can use '%[1]s status' to check the progress.`
   # Create an application based on a template file, explicitly setting a parameter value
   %[1]s new-app --file=./example/myapp/template.json --param=MYSQL_USER=admin
 
-  # Search for "mysql" in all image repositories and stored templates
-  %[1]s new-app --search mysql
+  # Search all templates, image streams, and Docker images for the ones that match "ruby"
+  %[1]s new-app --search ruby
 
-  # Search for "ruby", but only in stored templates (--template, --image and --docker-image
+  # Search for "ruby", but only in stored templates (--template, --image-stream and --docker-image
   # can be used to filter search results)
   %[1]s new-app --search --template=ruby
 
@@ -115,7 +111,8 @@ To search templates, image streams, and Docker images that match the arguments p
 
   %[1]s new-app -S php
   %[1]s new-app -S --template=ruby
-  %[1]s new-app -S --image=mysql
+  %[1]s new-app -S --image-stream=mysql
+  %[1]s new-app -S --docker-image=python
 `
 )
 
@@ -851,12 +848,7 @@ func (r *configSecretRetriever) CACert() (string, error) {
 }
 
 func checkGitInstalled(w io.Writer) {
-	gitBinary := "git"
-	if goruntime.GOOS == "windows" {
-		gitBinary = "git.exe"
-	}
-	_, err := exec.LookPath(gitBinary)
-	if err != nil {
+	if !git.IsGitInstalled() {
 		fmt.Fprintf(w, "warning: Cannot find git. Ensure that it is installed and in your path. Git is required to work with git repositories.\n")
 	}
 }

@@ -978,7 +978,9 @@ func (kl *Kubelet) initializeModules() error {
 // initializeRuntimeDependentModules will initialize internal modules that require the container runtime to be up.
 func (kl *Kubelet) initializeRuntimeDependentModules() {
 	if err := kl.cadvisor.Start(); err != nil {
-		kl.runtimeState.setInternalError(fmt.Errorf("Failed to start cAdvisor %v", err))
+		// Fail kubelet and rely on the babysitter to retry starting kubelet.
+		// TODO(random-liu): Add backoff logic in the babysitter
+		glog.Fatalf("Failed to start cAdvisor %v", err)
 	}
 }
 
@@ -1936,11 +1938,7 @@ func (kl *Kubelet) syncPod(o syncPodOptions) error {
 	}
 
 	// Wait for volumes to attach/mount
-	defaultedPod, _, err := kl.defaultPodLimitsForDownwardApi(pod, nil)
-	if err != nil {
-		return err
-	}
-	if err := kl.volumeManager.WaitForAttachAndMount(defaultedPod); err != nil {
+	if err := kl.volumeManager.WaitForAttachAndMount(pod); err != nil {
 		ref, errGetRef := api.GetReference(pod)
 		if errGetRef == nil && ref != nil {
 			kl.recorder.Eventf(ref, api.EventTypeWarning, kubecontainer.FailedMountVolume, "Unable to mount volumes for pod %q: %v", format.Pod(pod), err)
@@ -2840,6 +2838,14 @@ func (kl *Kubelet) GetKubeletContainerLogs(podFullName, containerName string, lo
 	if err != nil {
 		return err
 	}
+
+	// Do a zero-byte write to stdout before handing off to the container runtime.
+	// This ensures at least one Write call is made to the writer when copying starts,
+	// even if we then block waiting for log output from the container.
+	if _, err := stdout.Write([]byte{}); err != nil {
+		return err
+	}
+
 	return kl.containerRuntime.GetContainerLogs(pod, containerID, logOptions, stdout, stderr)
 }
 
@@ -3795,11 +3801,10 @@ func (kl *Kubelet) RunInContainer(podFullName string, podUID types.UID, containe
 	var buffer bytes.Buffer
 	output := ioutils.WriteCloserWrapper(&buffer)
 	err = kl.runner.ExecInContainer(container.ID, cmd, nil, output, output, false, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return buffer.Bytes(), nil
+	// Even if err is non-nil, there still may be output (e.g. the exec wrote to stdout or stderr but
+	// the command returned a nonzero exit code). Therefore, always return the output along with the
+	// error.
+	return buffer.Bytes(), err
 }
 
 // ExecInContainer executes a command in a container, connecting the supplied

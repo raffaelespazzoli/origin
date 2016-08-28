@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net"
 	"path"
 	"reflect"
 	"strings"
@@ -246,6 +247,9 @@ func BuildMasterConfig(options configapi.MasterConfig) (*MasterConfig, error) {
 		DefaultRegistryFn:     imageapi.DefaultRegistryFunc(defaultRegistryFunc),
 	}
 	originAdmission, kubeAdmission, err := buildAdmissionChains(options, kubeClientSet, pluginInitializer)
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO: look up storage by resource
 	serviceAccountTokenGetter, err := newServiceAccountTokenGetter(options, etcdClient)
@@ -309,9 +313,10 @@ var (
 		"ProjectRequestLimit",
 		"OriginNamespaceLifecycle",
 		"PodNodeConstraints",
-		"JenkinsBootstrapper",
+		"openshift.io/JenkinsBootstrapper",
 		"BuildByStrategy",
 		imageadmission.PluginName,
+		"openshift.io/OwnerReference",
 		quotaadmission.PluginName,
 	}
 
@@ -334,20 +339,21 @@ var (
 		"LimitPodHardAntiAffinityTopology",
 		"SCCExecRestrictions",
 		"PersistentVolumeLabel",
+		"openshift.io/OwnerReference",
 		// NOTE: quotaadmission and ClusterResourceQuota must be the last 2 plugins.
 		// DO NOT ADD ANY PLUGINS AFTER THIS LINE!
 		quotaadmission.PluginName,
-		"ClusterResourceQuota",
+		"openshift.io/ClusterResourceQuota",
 	}
 
-	// combinedAdmissionControlPlugins gives the in-order default admission chain for all resources resources.
+	// CombinedAdmissionControlPlugins gives the in-order default admission chain for all resources resources.
 	// When possible, this list is used.  The set of openshift+kube chains must exactly match this set.  In addition,
 	// the order specified in the openshift and kube chains must match the order here.
-	combinedAdmissionControlPlugins = []string{
+	CombinedAdmissionControlPlugins = []string{
 		"ProjectRequestLimit",
 		"OriginNamespaceLifecycle",
 		"PodNodeConstraints",
-		"JenkinsBootstrapper",
+		"openshift.io/JenkinsBootstrapper",
 		"BuildByStrategy",
 		imageadmission.PluginName,
 		"RunOnceDuration",
@@ -367,10 +373,11 @@ var (
 		"LimitPodHardAntiAffinityTopology",
 		"SCCExecRestrictions",
 		"PersistentVolumeLabel",
+		"openshift.io/OwnerReference",
 		// NOTE: quotaadmission and ClusterResourceQuota must be the last 2 plugins.
 		// DO NOT ADD ANY PLUGINS AFTER THIS LINE!
 		quotaadmission.PluginName,
-		"ClusterResourceQuota",
+		"openshift.io/ClusterResourceQuota",
 	}
 )
 
@@ -449,7 +456,7 @@ func buildAdmissionChains(options configapi.MasterConfig, kubeClientSet *interna
 		pluginConfig[pluginName] = config
 	}
 
-	admissionChain, err := newAdmissionChainFunc(combinedAdmissionControlPlugins, "", pluginConfig, options, kubeClientSet, pluginInitializer)
+	admissionChain, err := newAdmissionChainFunc(CombinedAdmissionControlPlugins, "", pluginConfig, options, kubeClientSet, pluginInitializer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -482,8 +489,10 @@ func newAdmissionChain(pluginNames []string, admissionConfigFilename string, plu
 				// should have been caught with validation
 				return nil, err
 			}
-			// TODO need to disallow if a cloud provider is configured
-			allowIngressIP := len(options.NetworkConfig.IngressIPNetworkCIDR) > 0
+			allowIngressIP := false
+			if _, ipNet, err := net.ParseCIDR(options.NetworkConfig.IngressIPNetworkCIDR); err == nil && !ipNet.IP.IsUnspecified() {
+				allowIngressIP = true
+			}
 			plugins = append(plugins, serviceadmit.NewExternalIPRanger(reject, admit, allowIngressIP))
 
 		case serviceadmit.RestrictedEndpointsPluginName:

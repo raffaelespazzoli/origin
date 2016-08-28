@@ -45,6 +45,7 @@ oc-adm-migrate.1
 oc-adm-new-project.1
 oc-adm-options.1
 oc-adm-overwrite-policy.1
+oc-adm-pod-network-isolate-projects.1
 oc-adm-pod-network-join-projects.1
 oc-adm-pod-network-make-projects-global.1
 oc-adm-pod-network.1
@@ -188,6 +189,7 @@ oc-set-build-hook.1
 oc-set-deployment-hook.1
 oc-set-env.1
 oc-set-probe.1
+oc-set-route-backends.1
 oc-set-triggers.1
 oc-set-volumes.1
 oc-set.1

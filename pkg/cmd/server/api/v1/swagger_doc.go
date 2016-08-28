@@ -149,7 +149,7 @@ func (DNSConfig) SwaggerDoc() map[string]string {
 
 var map_DefaultAdmissionConfig = map[string]string{
 	"":        "DefaultAdmissionConfig can be used to enable or disable various admission plugins. When this type is present as the `configuration` object under `pluginConfig` and *if* the admission plugin supports it, this will cause an \"off by default\" admission plugin to be enabled",
-	"Disable": "Disable turns off an admission plugin that is enabled by default.",
+	"disable": "Disable turns off an admission plugin that is enabled by default.",
 }
 
 func (DefaultAdmissionConfig) SwaggerDoc() map[string]string {
@@ -307,12 +307,12 @@ func (ImagePolicyConfig) SwaggerDoc() map[string]string {
 }
 
 var map_JenkinsPipelineConfig = map[string]string{
-	"":                  "JenkinsPipelineConfig holds configuration for the Jenkins pipeline strategy",
-	"enabled":           "If the enabled flag is set, a Jenkins server will be spawned from the provided template when the first build config in the project with type JenkinsPipeline is created. When not specified this option defaults to true.",
-	"templateNamespace": "TemplateNamespace contains the namespace name where the Jenkins template is stored",
-	"templateName":      "TemplateName is the name of the default Jenkins template",
-	"serviceName":       "ServiceName is the name of the Jenkins service OpenShift uses to detect whether a Jenkins pipeline handler has already been installed in a project. This value *must* match a service name in the provided template.",
-	"parameters":        "Parameters specifies a set of optional parameters to the Jenkins template.",
+	"": "JenkinsPipelineConfig holds configuration for the Jenkins pipeline strategy",
+	"autoProvisionEnabled": "AutoProvisionEnabled determines whether a Jenkins server will be spawned from the provided template when the first build config in the project with type JenkinsPipeline is created. When not specified this option defaults to false.",
+	"templateNamespace":    "TemplateNamespace contains the namespace name where the Jenkins template is stored",
+	"templateName":         "TemplateName is the name of the default Jenkins template",
+	"serviceName":          "ServiceName is the name of the Jenkins service OpenShift uses to detect whether a Jenkins pipeline handler has already been installed in a project. This value *must* match a service name in the provided template.",
+	"parameters":           "Parameters specifies a set of optional parameters to the Jenkins template.",
 }
 
 func (JenkinsPipelineConfig) SwaggerDoc() map[string]string {

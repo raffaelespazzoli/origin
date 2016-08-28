@@ -111,8 +111,11 @@ func (o ProjectsOptions) RunProjects() error {
 	clientCfg := o.ClientConfig
 	out := o.Out
 
+	var currentProject string
 	currentContext := config.Contexts[config.CurrentContext]
-	currentProject := currentContext.Namespace
+	if currentContext != nil {
+		currentProject = currentContext.Namespace
+	}
 
 	var currentProjectExists bool
 	var currentProjectErr error
@@ -125,7 +128,10 @@ func (o ProjectsOptions) RunProjects() error {
 		}
 	}
 
-	defaultContextName := cliconfig.GetContextNickname(currentContext.Namespace, currentContext.Cluster, currentContext.AuthInfo)
+	var defaultContextName string
+	if currentContext != nil {
+		defaultContextName = cliconfig.GetContextNickname(currentContext.Namespace, currentContext.Cluster, currentContext.AuthInfo)
+	}
 
 	var msg string
 	projects, err := getProjects(client)
@@ -176,7 +182,7 @@ func (o ProjectsOptions) RunProjects() error {
 		if len(projects) > 0 && !o.DisplayShort {
 			if !currentProjectExists {
 				if clientcmd.IsForbidden(currentProjectErr) {
-					fmt.Printf("you do not have rights to view project %q. Please switch to an existing one.", currentProject)
+					fmt.Printf("You do not have rights to view project %q. Please switch to an existing one.\n", currentProject)
 				}
 				return currentProjectErr
 			}

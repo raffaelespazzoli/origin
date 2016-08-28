@@ -54,14 +54,7 @@ func (s resourceSet) addAll(other resourceSet) {
 	}
 }
 
-func imageConditionInfo(rule *api.ImageCondition) (requiresImage bool, covers resourceSet, selectors []labels.Selector, err error) {
-	switch {
-	case len(rule.MatchImageLabels) > 0,
-		len(rule.MatchImageAnnotations) > 0,
-		len(rule.MatchDockerImageLabels) > 0:
-		requiresImage = true
-	}
-
+func imageConditionInfo(rule *api.ImageCondition) (covers resourceSet, selectors []labels.Selector, err error) {
 	covers = make(resourceSet)
 	for _, gr := range rule.OnResources {
 		covers[gr] = struct{}{}
@@ -70,19 +63,23 @@ func imageConditionInfo(rule *api.ImageCondition) (requiresImage bool, covers re
 	for i := range rule.MatchImageLabels {
 		s, err := unversioned.LabelSelectorAsSelector(&rule.MatchImageLabels[i])
 		if err != nil {
-			return false, nil, nil, err
+			return nil, nil, err
 		}
 		selectors = append(selectors, s)
 	}
 
-	return requiresImage, covers, selectors, nil
+	return covers, selectors, nil
 }
 
-// emptyImage is used when resolution failures occur but resolution failure is allowed
-var emptyImage = &imageapi.Image{
-	DockerImageMetadata: imageapi.DockerImage{
-		Config: &imageapi.DockerConfig{},
-	},
+func requiresImage(rule *api.ImageCondition) bool {
+	switch {
+	case len(rule.MatchImageLabels) > 0,
+		len(rule.MatchImageAnnotations) > 0,
+		len(rule.MatchDockerImageLabels) > 0:
+		return true
+	}
+
+	return false
 }
 
 // matchImageCondition determines the result of an ImageCondition or the provided arguments.
@@ -107,11 +104,13 @@ func matchImageConditionValues(rule *api.ImageCondition, integrated RegistryMatc
 	// all subsequent calls require the image
 	image := attrs.Image
 	if image == nil {
-		if !rule.AllowResolutionFailure {
-			return false
+		if rule.SkipOnResolutionFailure {
+			return true
 		}
-		// matches will be against an empty image
-		image = emptyImage
+
+		// if we don't require an image to evaluate our rules, then there's no reason to continue from here
+		// we already know that we passed our filter
+		return !requiresImage(rule)
 	}
 
 	if len(rule.MatchDockerImageLabels) > 0 {

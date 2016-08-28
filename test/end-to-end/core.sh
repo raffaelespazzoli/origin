@@ -78,9 +78,8 @@ echo "[INFO] Pre-pulling and pushing ruby-22-centos7"
 os::cmd::expect_success 'docker pull centos/ruby-22-centos7:latest'
 echo "[INFO] Pulled ruby-22-centos7"
 
-os::cmd::expect_success "oc create serviceaccount ipfailover"
 os::cmd::expect_success "openshift admin policy add-scc-to-user privileged -z ipfailover"
-os::cmd::expect_success "openshift admin ipfailover --images='${USE_IMAGES}' --virtual-ips='1.2.3.4' --credentials=${KUBECONFIG} --service-account=ipfailover"
+os::cmd::expect_success "openshift admin ipfailover --images='${USE_IMAGES}' --virtual-ips='1.2.3.4' --service-account=ipfailover"
 
 echo "[INFO] Waiting for Docker registry pod to start"
 wait_for_registry
@@ -358,18 +357,6 @@ os::cmd::expect_success 'oc logs bc/ruby-sample-build --loglevel=6'
 os::cmd::expect_success 'oc logs buildconfigs/ruby-sample-build --loglevel=6'
 os::cmd::expect_success 'oc logs buildconfig/ruby-sample-build --loglevel=6'
 echo "logs: ok"
-
-echo "[INFO] Starting a deployment to test scaling and image tag..."
-os::cmd::expect_success 'oc create -f test/integration/testdata/test-deployment-config.yaml'
-# scaling which might conflict with the deployment should work
-os::cmd::expect_success 'oc scale dc/test-deployment-config --replicas=2'
-os::cmd::try_until_text 'oc get rc/test-deployment-config-1 -o yaml' 'Complete'
-# scale rc via deployment configuration
-os::cmd::expect_success 'oc scale dc/test-deployment-config --replicas=3 --timeout=1m'
-os::cmd::expect_success 'oc delete dc/test-deployment-config'
-# expect the post deployment action to set a tag
-os::cmd::expect_success 'oc get istag/origin-ruby-sample:deployed'
-echo "scale: ok"
 
 echo "[INFO] Starting build from ${STI_CONFIG_FILE} with non-existing commit..."
 os::cmd::expect_failure 'oc start-build test --commit=fffffff --wait'

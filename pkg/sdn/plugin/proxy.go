@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/golang/glog"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/openshift/origin/pkg/sdn/plugin/api"
 
 	kapi "k8s.io/kubernetes/pkg/api"
+	kapierrs "k8s.io/kubernetes/pkg/api/errors"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	pconfig "k8s.io/kubernetes/pkg/proxy/config"
 	utilruntime "k8s.io/kubernetes/pkg/util/runtime"
@@ -24,10 +26,12 @@ type proxyFirewallItem struct {
 }
 
 type ovsProxyPlugin struct {
-	registry *Registry
-	firewall map[string][]proxyFirewallItem
-
+	registry             *Registry
 	baseEndpointsHandler pconfig.EndpointsConfigHandler
+
+	lock         sync.Mutex
+	firewall     map[string][]proxyFirewallItem
+	allEndpoints []kapi.Endpoints
 }
 
 // Called by higher layers to create the proxy plugin instance; only used by nodes
@@ -49,7 +53,11 @@ func (proxy *ovsProxyPlugin) Start(baseHandler pconfig.EndpointsConfigHandler) e
 
 	policies, err := proxy.registry.GetEgressNetworkPolicies()
 	if err != nil {
-		return fmt.Errorf("Could not get EgressNetworkPolicies: %s", err)
+		if kapierrs.IsForbidden(err) {
+			// controller.go will log an error about this
+			return nil
+		}
+		return fmt.Errorf("could not get EgressNetworkPolicies: %s", err)
 	}
 	for _, policy := range policies {
 		proxy.updateNetworkPolicy(policy)
@@ -72,8 +80,15 @@ func (proxy *ovsProxyPlugin) watchEgressNetworkPolicies() {
 		if eventType == watch.Deleted {
 			policy.Spec.Egress = nil
 		}
-		proxy.updateNetworkPolicy(*policy)
-		// FIXME: poke the endpoint-syncer somehow...
+
+		func() {
+			proxy.lock.Lock()
+			defer proxy.lock.Unlock()
+			proxy.updateNetworkPolicy(*policy)
+			if proxy.allEndpoints != nil {
+				proxy.updateEndpoints()
+			}
+		}()
 	}
 }
 
@@ -106,8 +121,15 @@ func (proxy *ovsProxyPlugin) firewallBlocksIP(namespace string, ip net.IP) bool 
 }
 
 func (proxy *ovsProxyPlugin) OnEndpointsUpdate(allEndpoints []kapi.Endpoints) {
+	proxy.lock.Lock()
+	defer proxy.lock.Unlock()
+	proxy.allEndpoints = allEndpoints
+	proxy.updateEndpoints()
+}
+
+func (proxy *ovsProxyPlugin) updateEndpoints() {
 	if len(proxy.firewall) == 0 {
-		proxy.baseEndpointsHandler.OnEndpointsUpdate(allEndpoints)
+		proxy.baseEndpointsHandler.OnEndpointsUpdate(proxy.allEndpoints)
 		return
 	}
 
@@ -117,10 +139,10 @@ func (proxy *ovsProxyPlugin) OnEndpointsUpdate(allEndpoints []kapi.Endpoints) {
 		return
 	}
 
-	filteredEndpoints := make([]kapi.Endpoints, 0, len(allEndpoints))
+	filteredEndpoints := make([]kapi.Endpoints, 0, len(proxy.allEndpoints))
 
 EndpointLoop:
-	for _, ep := range allEndpoints {
+	for _, ep := range proxy.allEndpoints {
 		ns := ep.ObjectMeta.Namespace
 		for _, ss := range ep.Subsets {
 			for _, addr := range ss.Addresses {

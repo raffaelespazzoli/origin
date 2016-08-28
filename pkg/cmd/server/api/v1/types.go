@@ -256,10 +256,10 @@ type AuditConfig struct {
 
 // JenkinsPipelineConfig holds configuration for the Jenkins pipeline strategy
 type JenkinsPipelineConfig struct {
-	// If the enabled flag is set, a Jenkins server will be spawned from the provided
+	// AutoProvisionEnabled determines whether a Jenkins server will be spawned from the provided
 	// template when the first build config in the project with type JenkinsPipeline
-	// is created. When not specified this option defaults to true.
-	Enabled *bool `json:"enabled"`
+	// is created. When not specified this option defaults to false.
+	AutoProvisionEnabled *bool `json:"autoProvisionEnabled"`
 	// TemplateNamespace contains the namespace name where the Jenkins template is stored
 	TemplateNamespace string `json:"templateNamespace"`
 	// TemplateName is the name of the default Jenkins template
@@ -1258,5 +1258,5 @@ type DefaultAdmissionConfig struct {
 	unversioned.TypeMeta `json:",inline"`
 
 	// Disable turns off an admission plugin that is enabled by default.
-	Disable bool
+	Disable bool `json:"disable"`
 }

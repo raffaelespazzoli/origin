@@ -48,15 +48,16 @@ associated resources by scaling them back up to their previous scale.`
   $ %[1]s idle --resource-names-file to-idle.txt`
 )
 
-// NewCmdStatus implements the OpenShift cli status command
+// NewCmdIdle implements the OpenShift cli idle command
 func NewCmdIdle(fullName string, f *clientcmd.Factory, out, errOut io.Writer) *cobra.Command {
 	o := &IdleOptions{
-		out:    out,
-		errOut: errOut,
+		out:         out,
+		errOut:      errOut,
+		cmdFullName: fullName,
 	}
 
 	cmd := &cobra.Command{
-		Use:     "idle (SERVICES... | -l label | --all | --resource-names-file FILENAME)",
+		Use:     "idle (SERVICE_ENDPOINTS... | -l label | --all | --resource-names-file FILENAME)",
 		Short:   "Idle scalable resources",
 		Long:    idleLong,
 		Example: fmt.Sprintf(idleExample, fullName),
@@ -92,6 +93,8 @@ type IdleOptions struct {
 	selector      string
 	allNamespaces bool
 	resources     string
+
+	cmdFullName string
 
 	nowTime    time.Time
 	svcBuilder *resource.Builder
@@ -259,7 +262,7 @@ func (o *IdleOptions) calculateIdlableAnnotationsByService(f *clientcmd.Factory)
 
 		endpoints, isEndpoints := info.Object.(*api.Endpoints)
 		if !isEndpoints {
-			return fmt.Errorf("you must specify endpoints, not %vs", info.Mapping.Resource)
+			return fmt.Errorf("you must specify endpoints, not %v (view available endpoints with \"%s get endpoints\").", info.Mapping.Resource, o.cmdFullName)
 		}
 
 		endpointsName := types.NamespacedName{
@@ -531,8 +534,9 @@ func (o *IdleOptions) RunIdle(f *clientcmd.Factory) error {
 	dcGetter := deployclient.New(oclient.RESTClient)
 	rcGetter := clientset.FromUnversionedClient(kclient)
 
-	scaleAnnotater := utilunidling.NewScaleAnnotater(delegScaleGetter, dcGetter, rcGetter, func(annotations map[string]string) {
+	scaleAnnotater := utilunidling.NewScaleAnnotater(delegScaleGetter, dcGetter, rcGetter, func(currentReplicas int32, annotations map[string]string) {
 		annotations[unidlingapi.IdledAtAnnotation] = nowTime.UTC().Format(time.RFC3339)
+		annotations[unidlingapi.PreviousScaleAnnotation] = fmt.Sprintf("%v", currentReplicas)
 	})
 
 	replicas := make(map[unidlingapi.CrossGroupObjectReference]int32, len(byScalable))
@@ -544,7 +548,7 @@ func (o *IdleOptions) RunIdle(f *clientcmd.Factory) error {
 	for scaleRef, svcName := range byScalable {
 		obj, scale, err := scaleAnnotater.GetObjectWithScale(svcName.Namespace, scaleRef)
 		if err != nil {
-			fmt.Fprintf(o.errOut, "error: unable to get scale for %s %s/%s, not marking that scalable as idled\n", scaleRef.Kind, svcName.Namespace, scaleRef.Name)
+			fmt.Fprintf(o.errOut, "error: unable to get scale for %s %s/%s, not marking that scalable as idled: %v\n", scaleRef.Kind, svcName.Namespace, scaleRef.Name, err)
 			svcInfo := byService[svcName]
 			delete(svcInfo.scaleRefs, scaleRef)
 			hadError = true
@@ -621,7 +625,7 @@ func (o *IdleOptions) RunIdle(f *clientcmd.Factory) error {
 		if !o.dryRun {
 			info.scale.Spec.Replicas = 0
 			if err := scaleAnnotater.UpdateObjectScale(info.namespace, scaleRef, info.obj, info.scale); err != nil {
-				fmt.Fprintf(o.errOut, "error: unable to scale %s %s/%s to 0, but still listed as target for unidling\n", scaleRef.Kind, info.namespace, scaleRef.Name)
+				fmt.Fprintf(o.errOut, "error: unable to scale %s %s/%s to 0, but still listed as target for unidling: %v\n", scaleRef.Kind, info.namespace, scaleRef.Name, err)
 				hadError = true
 				continue
 			}

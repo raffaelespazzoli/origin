@@ -13,6 +13,7 @@ source "${OS_ROOT}/contrib/node/install-sdn.sh"
 if [[ "${OS_RELEASE:-}" == "n" ]]; then
   # Use local binaries
   imagedir="${OS_OUTPUT_BINPATH}/linux/amd64"
+imagedir_arm="${OS_OUTPUT_BINPATH}/linux/arm"
   # identical to build-cross.sh
   os::build::os_version_vars
   OS_RELEASE_COMMIT="${OS_GIT_SHORT_VERSION}"
@@ -65,6 +66,13 @@ function ln_or_cp {
   fi
 }
 
+if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
+
+cp -R images _output/images_arm
+cp -R examples _output/examples_arm
+
+fi
+ 
 # Link or copy primary binaries to the appropriate locations.
 ln_or_cp "${imagedir}/openshift" images/origin/bin
 
@@ -75,6 +83,21 @@ ln_or_cp "${imagedir}/deployment"      examples/deployment/bin
 ln_or_cp "${imagedir}/gitserver"       examples/gitserver/bin
 ln_or_cp "${imagedir}/oc"              examples/gitserver/bin
 ln_or_cp "${imagedir}/dockerregistry"  images/dockerregistry/bin
+
+if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
+#same for arm
+# Link or copy primary binaries to the appropriate locations.
+ln_or_cp "${imagedir_arm}/openshift" "${OS_OUTPUT}/images_arm/origin/bin"
+
+# Link or copy image binaries to the appropriate locations.
+ln_or_cp "${imagedir_arm}/pod"             "${OS_OUTPUT}/images_arm/pod/bin"
+ln_or_cp "${imagedir_arm}/hello-openshift" "${OS_OUTPUT}/examples_arm/hello-openshift/bin"
+ln_or_cp "${imagedir_arm}/deployment"      "${OS_OUTPUT}/examples_arm/deployment/bin"
+ln_or_cp "${imagedir_arm}/gitserver"       "${OS_OUTPUT}/examples_arm/gitserver/bin"
+ln_or_cp "${imagedir_arm}/oc"              "${OS_OUTPUT}/examples_arm/gitserver/bin"
+ln_or_cp "${imagedir_arm}/dockerregistry"  "${OS_OUTPUT}/images_arm/dockerregistry/bin"
+
+fi
 
 # Copy SDN scripts into images/node
 os::provision::install-sdn "${OS_ROOT}" "${OS_ROOT}/images/node"
@@ -116,6 +139,35 @@ image openshift/node                         images/node
 image openshift/hello-openshift              examples/hello-openshift
 docker build --no-cache -t openshift/deployment-example:v1 examples/deployment
 docker build --no-cache -t openshift/deployment-example:v2 -f examples/deployment/Dockerfile.v2 examples/deployment
+
+
+#arm
+if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
+docker run --rm --privileged multiarch/qemu-user-static:register;
+# images that depend on scratch / centos
+image raffaelespazzoli/origin-pod-arm                   "${OS_OUTPUT}/images_arm/pod --dockerfile=${OS_OUTPUT}/images_arm/pod/Dockerfile.armhf"
+image raffaelespazzoli/openvswitch-arm                  "${OS_OUTPUT}/images_arm/openvswitch --dockerfile=${OS_OUTPUT}/images_arm/openvswitch/Dockerfile.armhf"
+# images that depend on openshift/origin-base
+image raffaelespazzoli/origin-arm                       "${OS_OUTPUT}/images_arm/origin --dockerfile=${OS_OUTPUT}/images_arm/origin/Dockerfile.armhf"
+image raffaelespazzoli/origin-haproxy-router-arm        "${OS_OUTPUT}/images_arm/router/haproxy --dockerfile=${OS_OUTPUT}/images_arm/router/haproxy/Dockerfile.armhf"
+image raffaelespazzoli/origin-keepalived-ipfailover-arm "${OS_OUTPUT}/images_arm/ipfailover/keepalived --dockerfile=${OS_OUTPUT}/images_arm/ipfailover/keepalived/Dockerfile.armhf"
+image raffaelespazzoli/origin-docker-registry-arm       "${OS_OUTPUT}/images_arm/dockerregistry --dockerfile=${OS_OUTPUT}/images_arm/dockerregistry/Dockerfile.armhf"
+image raffaelespazzoli/origin-egress-router-arm         "${OS_OUTPUT}/images_arm/router/egress --dockerfile=${OS_OUTPUT}/images_arm/router/egress/Dockerfile.armhf"
+image raffaelespazzoli/origin-gitserver-arm             "${OS_OUTPUT}/examples_arm/gitserver --dockerfile=${OS_OUTPUT}/examples_arm/gitserver/Dockerfile.armhf"
+# images that depend on openshift/origin
+image raffaelespazzoli/origin-deployer-arm              "${OS_OUTPUT}/images_arm/deployer --dockerfile=${OS_OUTPUT}/images_arm/deployer/Dockerfile.armhf"
+image raffaelespazzoli/origin-recycler-arm              "${OS_OUTPUT}/images_arm/recycler --dockerfile=${OS_OUTPUT}/images_arm/recycler/Dockerfile.armhf"
+image raffaelespazzoli/origin-docker-builder-arm        "${OS_OUTPUT}/images_arm/builder/docker/docker-builder --dockerfile=${OS_OUTPUT}/images_arm/builder/docker/docker-builder/Dockerfile.armhf"
+image raffaelespazzoli/origin-sti-builder-arm           "${OS_OUTPUT}/images_arm/builder/docker/sti-builder --dockerfile=${OS_OUTPUT}/images_arm/builder/docker/sti-builder/Dockerfile.armhf"
+image raffaelespazzoli/origin-f5-router-arm             "${OS_OUTPUT}/images_arm/router/f5 --dockerfile=${OS_OUTPUT}/images_arm/router/f5/Dockerfile.armhf"
+image raffaelespazzoli/node-arm                         "${OS_OUTPUT}/images_arm/node --dockerfile=${OS_OUTPUT}/images_arm/node/Dockerfile.armhf"
+
+# extra images (not part of infrastructure)
+image raffaelespazzoli/hello-openshift-arm              "${OS_ROOT}/examples_arm/hello-openshift --dockerfile=${OS_OUTPUT}/examples_arm/hello-openshift/Dockerfile.armhf"
+docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v1 -f "${OS_OUTPUT}/examples_arm/deployment/Dockerfile.armhf" "${OS_ROOT}/examples_arm/deployment"
+docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v2 -f examples_arm/deployment/Dockerfile.v2.armhf "${OS_ROOT}/examples/deployment"
+fi
+
 
 echo
 echo

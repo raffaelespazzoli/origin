@@ -1076,6 +1076,9 @@ function os::build::environment::withsource() {
   docker start "${container}" > /dev/null
   docker logs -f "${container}"
 
+  local exitcode
+  exitcode="$( docker inspect --type container -f '{{ .State.ExitCode }}' "${container}" )"
+
   # extract content from the image
   if [[ -n "${OS_BUILD_ENV_PRESERVE-}" ]]; then
     local workingdir
@@ -1090,6 +1093,7 @@ function os::build::environment::withsource() {
     done
     IFS="${oldIFS}"
   fi
+  return $exitcode
 }
 readonly -f os::build::environment::withsource
 

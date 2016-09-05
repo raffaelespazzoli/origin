@@ -23,7 +23,7 @@ build openshift/origin-release                "${OS_ROOT}/images/release"
 # if linux/arm exists then build also the arm images
 if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
 	# enable ability to execute and build arm containers
-	docker run --rm --privileged multiarch/qemu-user-static:register;
+	! docker run --rm --privileged multiarch/qemu-user-static:register;
 	
 	# Build the images
 	build raffaelespazzoli/origin-base-armhf                   "${OS_ROOT}/images/base --dockerfile=${OS_ROOT}/images/base/Dockerfile.armhf";

@@ -341,7 +341,7 @@ func (c *DeploymentController) makeDeployerPod(deployment *kapi.ReplicationContr
 //      of the factory's Environment and the strategy's environment as the
 //      container environment.
 //
-func (c *DeploymentController) makeDeployerContainer(strategy *deployapi.DeploymentStrategy) *kapi.Container {
+func (c *DeploymentController)  makeDeployerContainer(strategy *deployapi.DeploymentStrategy) *kapi.Container {
 	image := c.deployerImage
 	var environment []kapi.EnvVar
 	var command []string

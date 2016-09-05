@@ -56,7 +56,7 @@ URL:            https://%{import_path}
 %if 0%{?go_arches:1}
 ExclusiveArch:  %{go_arches}
 %else
-ExclusiveArch:  x86_64 aarch64 ppc64le
+ExclusiveArch:  x86_64 aarch64 ppc64le arm
 %endif
 
 Source0:        https://%{import_path}/archive/%{commit}/%{name}-%{version}.tar.gz
@@ -204,6 +204,7 @@ install -p -m 755 _output/local/bin/${PLATFORM}/extended.test %{buildroot}%{_lib
 # Install client executable for windows and mac
 install -d %{buildroot}%{_datadir}/%{name}/{linux,macosx,windows}
 install -p -m 755 _output/local/bin/linux/amd64/oc %{buildroot}%{_datadir}/%{name}/linux/oc
+#install -p -m 755 _output/local/bin/linux/arm/oc %{buildroot}%{_datadir}/%{name}/linux/oc
 install -p -m 755 _output/local/bin/darwin/amd64/oc %{buildroot}/%{_datadir}/%{name}/macosx/oc
 install -p -m 755 _output/local/bin/windows/amd64/oc.exe %{buildroot}/%{_datadir}/%{name}/windows/oc.exe
 %endif

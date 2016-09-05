@@ -68,8 +68,8 @@ function ln_or_cp {
 
 if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
 
-cp -R images _output/images_arm
-cp -R examples _output/examples_arm
+cp -Rpf "${OS_ROOT}/images" "${OS_OUTPUT}/images_arm"
+cp -Rpf "${OS_ROOT}/examples" "${OS_OUTPUT}/examples_arm"
 
 fi
  
@@ -104,6 +104,16 @@ os::provision::install-sdn "${OS_ROOT}" "${OS_ROOT}/images/node"
 mkdir -p images/node/conf/
 cp -pf "${OS_ROOT}/contrib/systemd/openshift-sdn-ovs.conf" images/node/conf/
 
+#same for arm
+if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
+	
+	# Copy SDN scripts into images/node
+os::provision::install-sdn "${OS_ROOT}" "${OS_OUTPUT}/images_arm/node"
+mkdir -p "${OS_OUTPUT}/images_arm/node/conf/"
+cp -pf "${OS_ROOT}/contrib/systemd/openshift-sdn-ovs.conf" "${OS_OUTPUT}/images_arm/node/conf/"
+	
+fi
+
 # builds an image and tags it two ways - with latest, and with the release tag
 function image {
   local STARTTIME=$(date +%s)
@@ -111,7 +121,7 @@ function image {
   build $1:latest $2
   #docker build -t $1:latest $2
   docker tag $1:latest $1:${OS_RELEASE_COMMIT}
-  git clean -fdx $2
+git clean -fdx ${2%% *}
   local ENDTIME=$(date +%s); echo "--- $1 took $(($ENDTIME - $STARTTIME)) seconds ---"
   echo
   echo
@@ -143,7 +153,7 @@ docker build --no-cache -t openshift/deployment-example:v2 -f examples/deploymen
 
 #arm
 if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
-docker run --rm --privileged multiarch/qemu-user-static:register;
+! docker run --rm --privileged multiarch/qemu-user-static:register;
 # images that depend on scratch / centos
 image raffaelespazzoli/origin-pod-arm                   "${OS_OUTPUT}/images_arm/pod --dockerfile=${OS_OUTPUT}/images_arm/pod/Dockerfile.armhf"
 image raffaelespazzoli/openvswitch-arm                  "${OS_OUTPUT}/images_arm/openvswitch --dockerfile=${OS_OUTPUT}/images_arm/openvswitch/Dockerfile.armhf"
@@ -163,9 +173,9 @@ image raffaelespazzoli/origin-f5-router-arm             "${OS_OUTPUT}/images_arm
 image raffaelespazzoli/node-arm                         "${OS_OUTPUT}/images_arm/node --dockerfile=${OS_OUTPUT}/images_arm/node/Dockerfile.armhf"
 
 # extra images (not part of infrastructure)
-image raffaelespazzoli/hello-openshift-arm              "${OS_ROOT}/examples_arm/hello-openshift --dockerfile=${OS_OUTPUT}/examples_arm/hello-openshift/Dockerfile.armhf"
-docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v1 -f "${OS_OUTPUT}/examples_arm/deployment/Dockerfile.armhf" "${OS_ROOT}/examples_arm/deployment"
-docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v2 -f examples_arm/deployment/Dockerfile.v2.armhf "${OS_ROOT}/examples/deployment"
+image raffaelespazzoli/hello-openshift-arm              "${OS_OUTPUT}/examples_arm/hello-openshift --dockerfile=${OS_OUTPUT}/examples_arm/hello-openshift/Dockerfile.armhf"
+docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v1 -f "${OS_OUTPUT}/examples_arm/deployment/Dockerfile.armhf" "${OS_OUTPUT}/examples_arm/deployment"
+docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v2 -f "${OS_OUTPUT}/examples_arm/deployment/Dockerfile.v2.armhf" "${OS_OUTPUT}/examples_arm/deployment"
 fi
 
 

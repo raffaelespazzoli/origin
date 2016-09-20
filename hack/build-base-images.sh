@@ -26,9 +26,9 @@ if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
 	! docker run --rm --privileged multiarch/qemu-user-static:register;
 	
 	# Build the images
-	build raffaelespazzoli/origin-base-armhf                   "${OS_ROOT}/images/base --dockerfile=${OS_ROOT}/images/base/Dockerfile.armhf";
-	build raffaelespazzoli/origin-haproxy-router-base-armhf    "${OS_ROOT}/images/router/haproxy-base --dockerfile=${OS_ROOT}/images/router/haproxy-base/Dockerfile.armhf";
-	build raffaelespazzoli/origin-release-armhf               "${OS_ROOT}/images/release --dockerfile=${OS_ROOT}/images/release/Dockerfile.armhf";
+	build raffaelespazzoli/origin-base-arm                   "${OS_ROOT}/images/base --dockerfile=${OS_ROOT}/images/base/Dockerfile.armhf";
+	build raffaelespazzoli/origin-haproxy-router-base-arm    "${OS_ROOT}/images/router/haproxy-base --dockerfile=${OS_ROOT}/images/router/haproxy-base/Dockerfile.armhf";
+	build raffaelespazzoli/origin-release-arm               "${OS_ROOT}/images/release --dockerfile=${OS_ROOT}/images/release/Dockerfile.armhf";
 fi
 
 ret=$?; ENDTIME=$(date +%s); echo "$0 took $(($ENDTIME - $STARTTIME)) seconds"; exit "$ret"

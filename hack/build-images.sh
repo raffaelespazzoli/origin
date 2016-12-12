@@ -13,7 +13,7 @@ source "${OS_ROOT}/contrib/node/install-sdn.sh"
 if [[ "${OS_RELEASE:-}" == "n" ]]; then
   # Use local binaries
   imagedir="${OS_OUTPUT_BINPATH}/linux/amd64"
-imagedir_arm="${OS_OUTPUT_BINPATH}/linux/arm"
+ imagedir_arm="${OS_OUTPUT_BINPATH}/linux/arm64"
   # identical to build-cross.sh
   os::build::os_version_vars
   OS_RELEASE_COMMIT="${OS_GIT_VERSION//+/-}"

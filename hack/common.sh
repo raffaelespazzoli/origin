@@ -22,11 +22,11 @@ function os::build::host_platform() {
 }
 readonly -f os::build::host_platform
 
-readonly OS_IMAGE_COMPILE_PLATFORMS=("$(os::build::host_platform)")
+#readonly OS_IMAGE_COMPILE_PLATFORMS=("$(os::build::host_platform)")
 
 readonly OS_IMAGE_COMPILE_PLATFORMS=(
   linux/amd64
-linux/arm64
+  linux/arm64
 )
 
 readonly OS_SDN_COMPILE_TARGETS_LINUX=(
@@ -60,7 +60,7 @@ if [[ "$(os::build::host_platform)" == "linux/ppc64le" ]]; then
   )
 fi
 
-readonly OS_IMAGE_COMPILE_PLATFORMS
+# readonly OS_IMAGE_COMPILE_PLATFORMS
 
 readonly OS_CROSS_COMPILE_TARGETS=(
   cmd/openshift
@@ -472,28 +472,22 @@ function os::build::place_bins() {
         elif [[ $platform == "linux/amd64" ]]; then
           platform="linux/64bit" OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive_tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
           platform="linux/64bit" OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive_tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
-<<<<<<< HEAD
         elif [[ $platform == "linux/arm64" ]]; then
         platform="linux/arm64" OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive_tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
         platform="linux/arm64" OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive_tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}" 
-=======
         elif [[ $platform == "linux/ppc64le" ]]; then
           platform="linux/ppc64le" OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive_tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
           platform="linux/ppc64le" OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive_tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
->>>>>>> master
         else
           echo "++ ERROR: No release type defined for $platform"
         fi
       else
         if [[ $platform == "linux/amd64" ]]; then
           platform="linux/64bit" os::build::archive_tar "./*"
-<<<<<<< HEAD
         elif [[ $platform == "linux/arm64" ]]; then
         platform="linux/arm64" os::build::archive_tar "./*"
-=======
         elif [[ $platform == "linux/ppc64le" ]]; then
           platform="linux/ppc64le" os::build::archive_tar "./*"
->>>>>>> master
         else
           echo "++ ERROR: No release type defined for $platform"
         fi

@@ -4,8 +4,11 @@
 #
 # The standard name for this image is openshift/origin-base
 #
-#FROM multiarch/centos:7.2-armhfp-clean
-FROM resin/armv7hf-fedora:24
+#FROM multiarch/centos:7-aarch64-iso
+FROM resin/aarch64-fedora:24
+
+#RUN yum remove -y       kernel-* *-firmware grub* centos-logos mariadb*           postfix btrfs* mozjs17 xfsprogs cloud-init pciutils*       libsoup* libgudev* python-prettytable                     python-setuptools python-boto yum-utils                   libsysfs* glib-networking libproxy plymouth*              libdrm wpa_supplicant *-desktop-*
+#RUN rm -rf /boot
 
 #RUN INSTALL_PKGS="which git tar wget hostname sysvinit-tools util-linux bsdtar epel-release \
 #      socat ethtool device-mapper iptables tree findutils nmap-ncat e2fsprogs xfsprogs lsof" && \
@@ -23,4 +26,4 @@ RUN INSTALL_PKGS="which git tar wget hostname util-linux bsdtar \
 
 LABEL io.k8s.display-name="OpenShift Origin Centos 7 Base" \
       io.k8s.description="This is the base image from which all OpenShift Origin images inherit." \
-      arch=armhf
+      arch=aarch64

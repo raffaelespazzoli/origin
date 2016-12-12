@@ -25,9 +25,13 @@ readonly -f os::build::host_platform
 #readonly OS_IMAGE_COMPILE_PLATFORMS=("$(os::build::host_platform)")
 
 readonly OS_IMAGE_COMPILE_PLATFORMS=(
-  linux/amd64
   linux/arm64
 )
+
+#readonly OS_IMAGE_COMPILE_PLATFORMS=(
+#  linux/amd64
+#  linux/arm64
+#)
 
 readonly OS_SDN_COMPILE_TARGETS_LINUX=(
   pkg/sdn/plugin/sdn-cni-plugin

@@ -155,6 +155,8 @@ function os::build::host_platform_friendly() {
     echo "linux-32bit"
   elif [[ $platform == "linux/amd64" ]]; then
     echo "linux-64bit"
+  elif [[ $platform == "linux/arm64" ]]; then
+    echo "linux-arm64"  
   else
     echo "$(go env GOHOSTOS)-$(go env GOHOSTARCH)"
   fi

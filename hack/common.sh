@@ -16,7 +16,7 @@ readonly OS_GO_PACKAGE=github.com/openshift/origin
 
 readonly OS_IMAGE_COMPILE_PLATFORMS=(
   linux/amd64
-  linux/arm
+linux/arm64
 )
 readonly OS_IMAGE_COMPILE_TARGETS=(
   images/pod
@@ -35,7 +35,7 @@ readonly OS_CROSS_COMPILE_PLATFORMS=(
   darwin/amd64
   windows/amd64
   linux/386
-  linux/arm
+ linux/arm64
 )
 readonly OS_CROSS_COMPILE_TARGETS=(
   cmd/openshift
@@ -452,17 +452,17 @@ function os::build::place_bins() {
         elif [[ $platform == "linux/amd64" ]]; then
           platform="linux/64bit" OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive_tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
           platform="linux/64bit" OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive_tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}"
-        elif [[ $platform == "linux/arm" ]]; then
-          platform="linux/arm" OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive_tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
-          platform="linux/arm" OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive_tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}" 
+        elif [[ $platform == "linux/arm64" ]]; then
+        platform="linux/arm64" OS_RELEASE_ARCHIVE="openshift-origin-client-tools" os::build::archive_tar "${OS_BINARY_RELEASE_CLIENT_LINUX[@]}"
+        platform="linux/arm64" OS_RELEASE_ARCHIVE="openshift-origin-server" os::build::archive_tar "${OS_BINARY_RELEASE_SERVER_LINUX[@]}" 
         else
           echo "++ ERROR: No release type defined for $platform"
         fi
       else
         if [[ $platform == "linux/amd64" ]]; then
           platform="linux/64bit" os::build::archive_tar "./*"
-        elif [[ $platform == "linux/arm" ]]; then
-          platform="linux/arm" os::build::archive_tar "./*"
+        elif [[ $platform == "linux/arm64" ]]; then
+        platform="linux/arm64" os::build::archive_tar "./*"
         else
           echo "++ ERROR: No release type defined for $platform"
         fi

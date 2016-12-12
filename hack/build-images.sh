@@ -16,7 +16,7 @@ if [[ "${OS_RELEASE:-}" == "n" ]]; then
 imagedir_arm="${OS_OUTPUT_BINPATH}/linux/arm"
   # identical to build-cross.sh
   os::build::os_version_vars
-  OS_RELEASE_COMMIT="${OS_GIT_SHORT_VERSION}"
+  OS_RELEASE_COMMIT="${OS_GIT_VERSION//+/-}"
   OS_BUILD_PLATFORMS=("${OS_IMAGE_COMPILE_PLATFORMS[@]-}")
 
   echo "Building images from source ${OS_RELEASE_COMMIT}:"
@@ -31,7 +31,7 @@ else
     exit 1
   fi
 
-  # Extract the release achives to a staging area.
+  # Extract the release archives to a staging area.
   os::build::detect_local_release_tars "linux-64bit"
 
   echo "Building images from release tars for commit ${OS_RELEASE_COMMIT}:"
@@ -45,14 +45,10 @@ else
   os::build::extract_tar "${OS_IMAGE_RELEASE_TAR}" "${imagedir}"
 fi
 
-oc="$(os::build::find-binary oc ${OS_ROOT})"
-if [[ -z "${oc}" ]]; then
-  "${OS_ROOT}/hack/build-go.sh" cmd/oc
-  oc="$(os::build::find-binary oc ${OS_ROOT})"
-fi
+os::util::ensure::built_binary_exists 'oc'
 
 function build() {
-  eval "'${oc}' ex dockerbuild $2 $1 ${OS_BUILD_IMAGE_ARGS:-}"
+  eval "oc ex dockerbuild $2 $1 ${OS_BUILD_IMAGE_ARGS:-}"
 }
 
 # Create link to file if the FS supports hardlinks, otherwise copy the file
@@ -81,7 +77,6 @@ ln_or_cp "${imagedir}/pod"             images/pod/bin
 ln_or_cp "${imagedir}/hello-openshift" examples/hello-openshift/bin
 ln_or_cp "${imagedir}/deployment"      examples/deployment/bin
 ln_or_cp "${imagedir}/gitserver"       examples/gitserver/bin
-ln_or_cp "${imagedir}/oc"              examples/gitserver/bin
 ln_or_cp "${imagedir}/dockerregistry"  images/dockerregistry/bin
 
 if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
@@ -100,7 +95,7 @@ ln_or_cp "${imagedir_arm}/dockerregistry"  "${OS_OUTPUT}/images_arm/dockerregist
 fi
 
 # Copy SDN scripts into images/node
-os::provision::install-sdn "${OS_ROOT}" "${OS_ROOT}/images/node"
+os::provision::install-sdn "${OS_ROOT}" "${imagedir}" "${OS_ROOT}/images/node"
 mkdir -p images/node/conf/
 cp -pf "${OS_ROOT}/contrib/systemd/openshift-sdn-ovs.conf" images/node/conf/
 
@@ -136,8 +131,8 @@ image openshift/origin-haproxy-router        images/router/haproxy
 image openshift/origin-keepalived-ipfailover images/ipfailover/keepalived
 image openshift/origin-docker-registry       images/dockerregistry
 image openshift/origin-egress-router         images/router/egress
-image openshift/origin-gitserver             examples/gitserver
 # images that depend on openshift/origin
+image openshift/origin-gitserver             examples/gitserver
 image openshift/origin-deployer              images/deployer
 image openshift/origin-recycler              images/recycler
 image openshift/origin-docker-builder        images/builder/docker/docker-builder

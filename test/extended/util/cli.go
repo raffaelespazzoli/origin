@@ -16,6 +16,7 @@ import (
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	apierrs "k8s.io/kubernetes/pkg/api/errors"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	clientcmd "k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/util/wait"
@@ -30,23 +31,24 @@ import (
 )
 
 // CLI provides function to call the OpenShift CLI and Kubernetes and OpenShift
-// REST clients.
+// clients.
 type CLI struct {
-	execPath        string
-	verb            string
-	configPath      string
-	adminConfigPath string
-	username        string
-	outputDir       string
-	globalArgs      []string
-	commandArgs     []string
-	finalArgs       []string
-	stdin           *bytes.Buffer
-	stdout          io.Writer
-	stderr          io.Writer
-	verbose         bool
-	cmd             *cobra.Command
-	kubeFramework   *e2e.Framework
+	execPath         string
+	verb             string
+	configPath       string
+	adminConfigPath  string
+	username         string
+	outputDir        string
+	globalArgs       []string
+	commandArgs      []string
+	finalArgs        []string
+	stdin            *bytes.Buffer
+	stdout           io.Writer
+	stderr           io.Writer
+	verbose          bool
+	withoutNamespace bool
+	cmd              *cobra.Command
+	kubeFramework    *e2e.Framework
 }
 
 // NewCLI initialize the upstream E2E framework and set the namespace to match
@@ -129,6 +131,12 @@ func (c *CLI) SetNamespace(ns string) *CLI {
 	return c
 }
 
+// WithoutNamespace instructs the command should be invoked without adding --namespace parameter
+func (c *CLI) WithoutNamespace() *CLI {
+	c.withoutNamespace = true
+	return c
+}
+
 // SetOutputDir change the default output directory for temporary files
 func (c *CLI) SetOutputDir(dir string) *CLI {
 	c.outputDir = dir
@@ -144,7 +152,7 @@ func (c *CLI) SetupProject(name string, kubeClient *kclient.Client, _ map[string
 	e2e.Logf("The user is now %q", c.Username())
 
 	e2e.Logf("Creating project %q", c.Namespace())
-	_, err := c.REST().ProjectRequests().Create(&projectapi.ProjectRequest{
+	_, err := c.Client().ProjectRequests().Create(&projectapi.ProjectRequest{
 		ObjectMeta: kapi.ObjectMeta{Name: c.Namespace()},
 	})
 	if err != nil {
@@ -152,7 +160,7 @@ func (c *CLI) SetupProject(name string, kubeClient *kclient.Client, _ map[string
 		return nil, err
 	}
 	if err := wait.ExponentialBackoff(kclient.DefaultBackoff, func() (bool, error) {
-		if _, err := c.KubeREST().Pods(c.Namespace()).List(kapi.ListOptions{}); err != nil {
+		if _, err := c.KubeClient().Core().Pods(c.Namespace()).List(kapi.ListOptions{}); err != nil {
 			if apierrs.IsForbidden(err) {
 				e2e.Logf("Waiting for user to have access to the namespace")
 				return false, nil
@@ -171,10 +179,10 @@ func (c *CLI) Verbose() *CLI {
 	return c
 }
 
-// REST provides an OpenShift REST client for the current user. If the user is not
-// set, then it provides REST client for the cluster admin user
-func (c *CLI) REST() *client.Client {
-	_, clientConfig, err := configapi.GetKubeClient(c.configPath, nil)
+// Client provides an OpenShift client for the current user. If the user is not
+// set, then it provides client for the cluster admin user
+func (c *CLI) Client() *client.Client {
+	_, _, clientConfig, err := configapi.GetKubeClient(c.configPath, nil)
 	osClient, err := client.New(clientConfig)
 	if err != nil {
 		FatalErr(err)
@@ -182,9 +190,9 @@ func (c *CLI) REST() *client.Client {
 	return osClient
 }
 
-// AdminREST provides an OpenShift REST client for the cluster admin user.
-func (c *CLI) AdminREST() *client.Client {
-	_, clientConfig, err := configapi.GetKubeClient(c.adminConfigPath, nil)
+// AdminClient provides an OpenShift client for the cluster admin user.
+func (c *CLI) AdminClient() *client.Client {
+	_, _, clientConfig, err := configapi.GetKubeClient(c.adminConfigPath, nil)
 	osClient, err := client.New(clientConfig)
 	if err != nil {
 		FatalErr(err)
@@ -192,18 +200,18 @@ func (c *CLI) AdminREST() *client.Client {
 	return osClient
 }
 
-// KubeREST provides a Kubernetes REST client for the current namespace
-func (c *CLI) KubeREST() *kclient.Client {
-	kubeClient, _, err := configapi.GetKubeClient(c.configPath, nil)
+// KubeClient provides a Kubernetes client for the current namespace
+func (c *CLI) KubeClient() *kclientset.Clientset {
+	_, kubeClient, _, err := configapi.GetKubeClient(c.configPath, nil)
 	if err != nil {
 		FatalErr(err)
 	}
 	return kubeClient
 }
 
-// AdminKubeREST provides a Kubernetes REST client for the cluster admin user.
-func (c *CLI) AdminKubeREST() *kclient.Client {
-	kubeClient, _, err := configapi.GetKubeClient(c.adminConfigPath, nil)
+// AdminKubeClient provides a Kubernetes client for the cluster admin user.
+func (c *CLI) AdminKubeClient() *kclientset.Clientset {
+	_, kubeClient, _, err := configapi.GetKubeClient(c.adminConfigPath, nil)
 	if err != nil {
 		FatalErr(err)
 	}
@@ -239,9 +247,11 @@ func (c *CLI) Run(commands ...string) *CLI {
 		username:        c.username,
 		outputDir:       c.outputDir,
 		globalArgs: append(commands, []string{
-			fmt.Sprintf("--namespace=%s", c.Namespace()),
 			fmt.Sprintf("--config=%s", c.configPath),
 		}...),
+	}
+	if !c.withoutNamespace {
+		nc.globalArgs = append(nc.globalArgs, fmt.Sprintf("--namespace=%s", c.Namespace()))
 	}
 	nc.stdin, nc.stdout, nc.stderr = in, out, errout
 	return nc.setOutput(c.stdout)

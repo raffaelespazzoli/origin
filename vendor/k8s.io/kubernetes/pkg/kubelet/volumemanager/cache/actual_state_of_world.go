@@ -296,6 +296,15 @@ func (asw *actualStateOfWorld) MarkVolumeAsMounted(
 		volumeGidValue)
 }
 
+func (asw *actualStateOfWorld) AddVolumeToReportAsAttached(volumeName api.UniqueVolumeName, nodeName string) {
+	// no operation for kubelet side
+}
+
+func (asw *actualStateOfWorld) RemoveVolumeFromReportAsAttached(volumeName api.UniqueVolumeName, nodeName string) error {
+	// no operation for kubelet side
+	return nil
+}
+
 func (asw *actualStateOfWorld) MarkVolumeAsUnmounted(
 	podName volumetypes.UniquePodName, volumeName api.UniqueVolumeName) error {
 	return asw.DeletePodFromVolume(podName, volumeName)
@@ -357,8 +366,15 @@ func (asw *actualStateOfWorld) addVolume(
 			globallyMounted:    false,
 			devicePath:         devicePath,
 		}
-		asw.attachedVolumes[volumeName] = volumeObj
+	} else {
+		// If volume object already exists, update the fields such as device path
+		volumeObj.devicePath = devicePath
+		volumeObj.spec = volumeSpec
+		glog.V(2).Infof("Volume %q is already added to attachedVolume list, update device path %q",
+			volumeName,
+			devicePath)
 	}
+	asw.attachedVolumes[volumeName] = volumeObj
 
 	return nil
 }

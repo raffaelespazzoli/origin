@@ -171,8 +171,11 @@ func deploymentReachedCompletion(dc *deployapi.DeploymentConfig, rcs []kapi.Repl
 		return false, nil
 	}
 
-	status := rc.Annotations[deployapi.DeploymentStatusAnnotation]
-	if deployapi.DeploymentStatus(status) != deployapi.DeploymentStatusComplete {
+	if !deployutil.IsCompleteDeployment(&rc) {
+		return false, nil
+	}
+	cond := deployutil.GetDeploymentCondition(dc.Status, deployapi.DeploymentProgressing)
+	if cond == nil || cond.Reason != deployutil.NewRcAvailableReason {
 		return false, nil
 	}
 	expectedReplicas := dc.Spec.Replicas
@@ -186,6 +189,7 @@ func deploymentReachedCompletion(dc *deployapi.DeploymentConfig, rcs []kapi.Repl
 		e2e.Logf("POSSIBLE_ANOMALY: deployment is complete but doesn't have expected status replicas: %d %d", rc.Status.Replicas, expectedReplicas)
 		return false, nil
 	}
+	e2e.Logf("Latest rollout of dc/%s (rc/%s) is complete.", dc.Name, rc.Name)
 	return true, nil
 }
 
@@ -198,7 +202,11 @@ func deploymentFailed(dc *deployapi.DeploymentConfig, rcs []kapi.ReplicationCont
 	if version != dc.Status.LatestVersion {
 		return false, nil
 	}
-	return deployutil.IsFailedDeployment(&rc), nil
+	if !deployutil.IsFailedDeployment(&rc) {
+		return false, nil
+	}
+	cond := deployutil.GetDeploymentCondition(dc.Status, deployapi.DeploymentProgressing)
+	return cond != nil && cond.Reason == deployutil.TimedOutReason, nil
 }
 
 func deploymentRunning(dc *deployapi.DeploymentConfig, rcs []kapi.ReplicationController, pods []kapi.Pod) (bool, error) {
@@ -249,18 +257,18 @@ func deploymentPreHookRetried(dc *deployapi.DeploymentConfig, rcs []kapi.Replica
 }
 
 func deploymentInfo(oc *exutil.CLI, name string) (*deployapi.DeploymentConfig, []kapi.ReplicationController, []kapi.Pod, error) {
-	dc, err := oc.REST().DeploymentConfigs(oc.Namespace()).Get(name)
+	dc, err := oc.Client().DeploymentConfigs(oc.Namespace()).Get(name)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// get pods before RCs, so we see more RCs than pods.
-	pods, err := oc.KubeREST().Pods(oc.Namespace()).List(kapi.ListOptions{})
+	pods, err := oc.KubeClient().Core().Pods(oc.Namespace()).List(kapi.ListOptions{})
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	rcs, err := oc.KubeREST().ReplicationControllers(oc.Namespace()).List(kapi.ListOptions{
+	rcs, err := oc.KubeClient().Core().ReplicationControllers(oc.Namespace()).List(kapi.ListOptions{
 		LabelSelector: deployutil.ConfigSelector(name),
 	})
 	if err != nil {
@@ -296,7 +304,11 @@ func waitForSyncedConfig(oc *exutil.CLI, name string, timeout time.Duration) err
 	}
 	generation := dc.Generation
 	return wait.PollImmediate(200*time.Millisecond, timeout, func() (bool, error) {
-		return deployutil.HasSynced(dc, generation), nil
+		config, err := oc.Client().DeploymentConfigs(oc.Namespace()).Get(name)
+		if err != nil {
+			return false, err
+		}
+		return deployutil.HasSynced(config, generation), nil
 	})
 }
 
@@ -347,7 +359,7 @@ func failureTrap(oc *exutil.CLI, name string, failed bool) {
 				return
 			}
 			e2e.Logf("\n%s\n", out)
-			out, _ = oc.Run("logs").Args("pod/" + pod.Name).Output()
+			out, _ = oc.Run("logs").Args("pod/"+pod.Name, "--timestamps=true").Output()
 			e2e.Logf("--- pod %s logs\n%s---\n", pod.Name, out)
 		}
 	}

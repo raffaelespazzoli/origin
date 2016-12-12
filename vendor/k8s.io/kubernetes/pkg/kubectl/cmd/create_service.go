@@ -29,14 +29,12 @@ import (
 )
 
 // NewCmdCreateService is a macro command to create a new namespace
-func NewCmdCreateService(f *cmdutil.Factory, cmdOut io.Writer) *cobra.Command {
+func NewCmdCreateService(f *cmdutil.Factory, cmdOut, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "service",
 		Short: "Create a service using specified subcommand.",
 		Long:  "Create a service using specified subcommand.",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
-		},
+		Run:   cmdutil.DefaultSubCommandRun(errOut),
 	}
 	cmd.AddCommand(NewCmdCreateServiceClusterIP(f, cmdOut))
 	cmd.AddCommand(NewCmdCreateServiceNodePort(f, cmdOut))
@@ -133,6 +131,7 @@ func NewCmdCreateServiceNodePort(f *cmdutil.Factory, cmdOut io.Writer) *cobra.Co
 	cmdutil.AddValidateFlags(cmd)
 	cmdutil.AddPrinterFlags(cmd)
 	cmdutil.AddGeneratorFlags(cmd, cmdutil.ServiceNodePortGeneratorV1Name)
+	cmd.Flags().Int("node-port", 0, "Port used to expose the service on each node in a cluster.")
 	addPortFlags(cmd)
 	return cmd
 }
@@ -151,6 +150,7 @@ func CreateServiceNodePort(f *cmdutil.Factory, cmdOut io.Writer, cmd *cobra.Comm
 			TCP:       cmdutil.GetFlagStringSlice(cmd, "tcp"),
 			Type:      api.ServiceTypeNodePort,
 			ClusterIP: "",
+			NodePort:  cmdutil.GetFlagInt(cmd, "node-port"),
 		}
 	default:
 		return cmdutil.UsageError(cmd, fmt.Sprintf("Generator: %s not supported.", generatorName))

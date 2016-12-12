@@ -273,7 +273,7 @@ func (plugin *FakeVolumePlugin) GetNewDetacherCallCount() int {
 	return plugin.NewDetacherCallCount
 }
 
-func (plugin *FakeVolumePlugin) NewRecycler(pvName string, spec *Spec) (Recycler, error) {
+func (plugin *FakeVolumePlugin) NewRecycler(pvName string, spec *Spec, eventRecorder RecycleEventRecorder) (Recycler, error) {
 	return &fakeRecycler{"/attributesTransferredFromSpec", MetricsNil{}}, nil
 }
 
@@ -457,7 +457,7 @@ func (fr *fakeRecycler) GetPath() string {
 	return fr.path
 }
 
-func NewFakeRecycler(pvName string, spec *Spec, host VolumeHost, config VolumeConfig) (Recycler, error) {
+func NewFakeRecycler(pvName string, spec *Spec, eventRecorder RecycleEventRecorder, host VolumeHost, config VolumeConfig) (Recycler, error) {
 	if spec.PersistentVolume == nil || spec.PersistentVolume.Spec.HostPath == nil {
 		return nil, fmt.Errorf("fakeRecycler only supports spec.PersistentVolume.Spec.HostPath")
 	}
@@ -497,9 +497,9 @@ func (fc *FakeProvisioner) Provision() (*api.PersistentVolume, error) {
 		},
 		Spec: api.PersistentVolumeSpec{
 			PersistentVolumeReclaimPolicy: fc.Options.PersistentVolumeReclaimPolicy,
-			AccessModes:                   fc.Options.AccessModes,
+			AccessModes:                   fc.Options.PVC.Spec.AccessModes,
 			Capacity: api.ResourceList{
-				api.ResourceName(api.ResourceStorage): fc.Options.Capacity,
+				api.ResourceName(api.ResourceStorage): fc.Options.PVC.Spec.Resources.Requests[api.ResourceName(api.ResourceStorage)],
 			},
 			PersistentVolumeSource: api.PersistentVolumeSource{
 				HostPath: &api.HostPathVolumeSource{
@@ -745,4 +745,23 @@ func GetTestVolumePluginMgr(
 	}
 
 	return &v.pluginMgr, plugins[0].(*FakeVolumePlugin)
+}
+
+// CreateTestPVC returns a provisionable PVC for tests
+func CreateTestPVC(capacity string, accessModes []api.PersistentVolumeAccessMode) *api.PersistentVolumeClaim {
+	claim := api.PersistentVolumeClaim{
+		ObjectMeta: api.ObjectMeta{
+			Name:      "dummy",
+			Namespace: "default",
+		},
+		Spec: api.PersistentVolumeClaimSpec{
+			AccessModes: accessModes,
+			Resources: api.ResourceRequirements{
+				Requests: api.ResourceList{
+					api.ResourceName(api.ResourceStorage): resource.MustParse(capacity),
+				},
+			},
+		},
+	}
+	return &claim
 }

@@ -8,10 +8,12 @@ import (
 	"github.com/spf13/cobra"
 
 	kapi "k8s.io/kubernetes/pkg/api"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
+	adapter "k8s.io/kubernetes/pkg/client/unversioned/adapters/internalclientset"
 	kcmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
 	authorizationapi "github.com/openshift/origin/pkg/authorization/api"
+	"github.com/openshift/origin/pkg/cmd/templates"
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 	uservalidation "github.com/openshift/origin/pkg/user/api/validation"
 )
@@ -23,17 +25,18 @@ const (
 	RemoveSCCFromUserRecommendedName  = "remove-scc-from-user"
 )
 
-const (
-	addSCCToUserExample = `  # Add the 'restricted' security context contraint to user1 and user2
-  %[1]s restricted user1 user2
+var (
+	addSCCToUserExample = templates.Examples(`
+		# Add the 'restricted' security context contraint to user1 and user2
+	  %[1]s restricted user1 user2
 
-  # Add the 'privileged' security context contraint to the service account serviceaccount1 in the current namespace
-  %[1]s privileged -z serviceaccount1`
+	  # Add the 'privileged' security context contraint to the service account serviceaccount1 in the current namespace
+	  %[1]s privileged -z serviceaccount1`)
 )
 
 type SCCModificationOptions struct {
 	SCCName      string
-	SCCInterface kclient.SecurityContextConstraintsInterface
+	SCCInterface kcoreclient.SecurityContextConstraintsGetter
 
 	DefaultSubjectNamespace string
 	Subjects                []kapi.ObjectReference
@@ -142,11 +145,11 @@ func (o *SCCModificationOptions) CompleteUsers(f *clientcmd.Factory, args []stri
 		return errors.New("you must specify at least one user or service account")
 	}
 
-	var err error
-	_, o.SCCInterface, err = f.Clients()
+	_, kc, _, err := f.Clients()
 	if err != nil {
 		return err
 	}
+	o.SCCInterface = adapter.FromUnversionedClient(kc).Core()
 
 	o.DefaultSubjectNamespace, _, err = f.DefaultNamespace()
 	if err != nil {
@@ -168,11 +171,11 @@ func (o *SCCModificationOptions) CompleteGroups(f *clientcmd.Factory, args []str
 	o.SCCName = args[0]
 	o.Subjects = authorizationapi.BuildSubjects([]string{}, args[1:], uservalidation.ValidateUserName, uservalidation.ValidateGroupName)
 
-	var err error
-	_, o.SCCInterface, err = f.Clients()
+	_, kc, _, err := f.Clients()
 	if err != nil {
 		return err
 	}
+	o.SCCInterface = adapter.FromUnversionedClient(kc).Core()
 
 	o.DefaultSubjectNamespace, _, err = f.DefaultNamespace()
 	if err != nil {

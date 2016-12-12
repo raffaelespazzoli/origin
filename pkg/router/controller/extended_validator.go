@@ -38,6 +38,11 @@ func NewExtendedValidator(plugin router.Plugin, recorder RejectionRecorder) *Ext
 	}
 }
 
+// HandleNode processes watch events on the node resource
+func (p *ExtendedValidator) HandleNode(eventType watch.EventType, node *kapi.Node) error {
+	return p.plugin.HandleNode(eventType, node)
+}
+
 // HandleEndpoints processes watch events on the Endpoints resource.
 func (p *ExtendedValidator) HandleEndpoints(eventType watch.EventType, endpoints *kapi.Endpoints) error {
 	return p.plugin.HandleEndpoints(eventType, endpoints)
@@ -76,4 +81,8 @@ func (p *ExtendedValidator) HandleNamespaces(namespaces sets.String) error {
 
 func (p *ExtendedValidator) SetLastSyncProcessed(processed bool) error {
 	return p.plugin.SetLastSyncProcessed(processed)
+}
+
+func (p *ExtendedValidator) SetSyncedAtLeastOnce() error {
+	return p.plugin.SetSyncedAtLeastOnce()
 }

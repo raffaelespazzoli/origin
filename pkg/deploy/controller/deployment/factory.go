@@ -6,8 +6,9 @@ import (
 	"github.com/golang/glog"
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/cache"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	"k8s.io/kubernetes/pkg/client/record"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	kcontroller "k8s.io/kubernetes/pkg/controller"
 	"k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -22,18 +23,18 @@ const (
 	// We must avoid creating processing deployment configs until the deployment config and image
 	// stream stores have synced. If it hasn't synced, to avoid a hot loop, we'll wait this long
 	// between checks.
-	StoreSyncedPollPeriod = 100 * time.Millisecond
+	storeSyncedPollPeriod = 100 * time.Millisecond
 )
 
 // NewDeploymentController creates a new DeploymentController.
-func NewDeploymentController(rcInformer, podInformer framework.SharedIndexInformer, kc kclient.Interface, sa, image string, env []kapi.EnvVar, codec runtime.Codec) *DeploymentController {
+func NewDeploymentController(rcInformer, podInformer framework.SharedIndexInformer, kc kclientset.Interface, sa, image string, env []kapi.EnvVar, codec runtime.Codec) *DeploymentController {
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(kc.Events(""))
+	eventBroadcaster.StartRecordingToSink(&kcoreclient.EventSinkImpl{Interface: kc.Core().Events("")})
 	recorder := eventBroadcaster.NewRecorder(kapi.EventSource{Component: "deployments-controller"})
 
 	c := &DeploymentController{
-		rn: kc,
-		pn: kc,
+		rn: kc.Core(),
+		pn: kc.Core(),
 
 		queue: workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
 
@@ -89,7 +90,7 @@ func (c *DeploymentController) waitForSyncedStores(ready chan<- struct{}, stopCh
 	for !c.rcStoreSynced() || !c.podStoreSynced() {
 		glog.V(4).Infof("Waiting for the rc and pod caches to sync before starting the deployment controller workers")
 		select {
-		case <-time.After(StoreSyncedPollPeriod):
+		case <-time.After(storeSyncedPollPeriod):
 		case <-stopCh:
 			return
 		}

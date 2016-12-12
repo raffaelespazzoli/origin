@@ -8,6 +8,7 @@ import (
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	kapierrors "k8s.io/kubernetes/pkg/api/errors"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	kclientcmd "k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	clientcmdapi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
@@ -15,8 +16,10 @@ import (
 
 	"github.com/openshift/origin/pkg/client"
 	cliconfig "github.com/openshift/origin/pkg/cmd/cli/config"
+	"github.com/openshift/origin/pkg/cmd/templates"
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 	"github.com/openshift/origin/pkg/project/api"
+	projectutil "github.com/openshift/origin/pkg/project/util"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +27,7 @@ import (
 type ProjectOptions struct {
 	Config       clientcmdapi.Config
 	ClientConfig *restclient.Config
-	ClientFn     func() (*client.Client, error)
+	ClientFn     func() (*client.Client, kclientset.Interface, error)
 	Out          io.Writer
 	PathOptions  *kclientcmd.PathOptions
 
@@ -36,25 +39,26 @@ type ProjectOptions struct {
 	SkipAccessValidation bool
 }
 
-const (
-	projectLong = `
-Switch to another project and make it the default in your configuration
+var (
+	projectLong = templates.LongDesc(`
+		Switch to another project and make it the default in your configuration
 
-If no project was specified on the command line, display information about the current active
-project. Since you can use this command to connect to projects on different servers, you will
-occasionally encounter projects of the same name on different servers. When switching to that
-project, a new local context will be created that will have a unique name - for instance,
-'myapp-2'. If you have previously created a context with a different name than the project
-name, this command will accept that context name instead.
+		If no project was specified on the command line, display information about the current active
+		project. Since you can use this command to connect to projects on different servers, you will
+		occasionally encounter projects of the same name on different servers. When switching to that
+		project, a new local context will be created that will have a unique name - for instance,
+		'myapp-2'. If you have previously created a context with a different name than the project
+		name, this command will accept that context name instead.
 
-For advanced configuration, or to manage the contents of your config file, use the 'config'
-command.`
+		For advanced configuration, or to manage the contents of your config file, use the 'config'
+		command.`)
 
-	projectExample = `  # Switch to 'myapp' project
-  %[1]s myapp
+	projectExample = templates.Examples(`
+		# Switch to 'myapp' project
+	  %[1]s myapp
 
-  # Display the project currently in use
-  %[1]s`
+	  # Display the project currently in use
+	  %[1]s`)
 )
 
 // NewCmdProject implements the OpenShift cli rollback command
@@ -103,9 +107,9 @@ func (o *ProjectOptions) Complete(f *clientcmd.Factory, args []string, out io.Wr
 		return err
 	}
 
-	o.ClientFn = func() (*client.Client, error) {
-		client, _, err := f.Clients()
-		return client, err
+	o.ClientFn = func() (*client.Client, kclientset.Interface, error) {
+		oc, _, kc, err := f.Clients()
+		return oc, kc, err
 	}
 
 	o.Out = out
@@ -136,18 +140,17 @@ func (o ProjectOptions) RunProject() error {
 				return nil
 			}
 
-			client, err := o.ClientFn()
+			client, kubeclient, err := o.ClientFn()
 			if err != nil {
 				return err
 			}
 
-			if _, err := client.Projects().Get(currentProject); err != nil {
-				if kapierrors.IsNotFound(err) {
-					return fmt.Errorf("the project %q specified in your config does not exist.", currentProject)
-				}
-				if clientcmd.IsForbidden(err) {
-					return fmt.Errorf("you do not have rights to view project %q.", currentProject)
-				}
+			switch err := confirmProjectAccess(currentProject, client, kubeclient); {
+			case clientcmd.IsForbidden(err):
+				return fmt.Errorf("you do not have rights to view project %q.", currentProject)
+			case kapierrors.IsNotFound(err):
+				return fmt.Errorf("the project %q specified in your config does not exist.", currentProject)
+			case err != nil:
 				return err
 			}
 
@@ -187,12 +190,12 @@ func (o ProjectOptions) RunProject() error {
 
 	} else {
 		if !o.SkipAccessValidation {
-			client, err := o.ClientFn()
+			client, kubeclient, err := o.ClientFn()
 			if err != nil {
 				return err
 			}
 
-			if _, err := client.Projects().Get(argument); err != nil {
+			if err := confirmProjectAccess(argument, client, kubeclient); err != nil {
 				if isNotFound, isForbidden := kapierrors.IsNotFound(err), clientcmd.IsForbidden(err); isNotFound || isForbidden {
 					var msg string
 					if isForbidden {
@@ -201,7 +204,7 @@ func (o ProjectOptions) RunProject() error {
 						msg = fmt.Sprintf("A project named %q does not exist on %q.", argument, clientCfg.Host)
 					}
 
-					projects, err := getProjects(client)
+					projects, err := getProjects(client, kubeclient)
 					if err == nil {
 						switch len(projects) {
 						case 0:
@@ -277,11 +280,36 @@ func (o ProjectOptions) RunProject() error {
 	return nil
 }
 
-func getProjects(oClient *client.Client) ([]api.Project, error) {
+func confirmProjectAccess(currentProject string, oClient *client.Client, kClient kclientset.Interface) error {
+	_, projectErr := oClient.Projects().Get(currentProject)
+	if !kapierrors.IsNotFound(projectErr) && !kapierrors.IsForbidden(projectErr) {
+		return projectErr
+	}
+
+	// at this point we know the error is a not found or forbidden, but we'll test namespaces just in case we're running on kube
+	if _, err := kClient.Core().Namespaces().Get(currentProject); err == nil {
+		return nil
+	}
+
+	// otherwise return the openshift error default
+	return projectErr
+}
+
+func getProjects(oClient *client.Client, kClient kclientset.Interface) ([]api.Project, error) {
 	projects, err := oClient.Projects().List(kapi.ListOptions{})
+	if err == nil {
+		return projects.Items, nil
+	}
+	// if this is kube with authorization enabled, this endpoint will be forbidden.  OpenShift allows this for everyone.
+	if err != nil && !(kapierrors.IsNotFound(err) || kapierrors.IsForbidden(err)) {
+		return nil, err
+	}
+
+	namespaces, err := kClient.Core().Namespaces().List(kapi.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
+	projects = projectutil.ConvertNamespaceList(namespaces)
 	return projects.Items, nil
 }
 

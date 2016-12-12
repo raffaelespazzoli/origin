@@ -121,217 +121,6 @@ func TestParseImageStreamTagName(t *testing.T) {
 	}
 }
 
-func TestParseDockerImageReference(t *testing.T) {
-	testCases := []struct {
-		From                               string
-		Registry, Namespace, Name, Tag, ID string
-		Err                                bool
-	}{
-		{
-			From: "foo",
-			Name: "foo",
-		},
-		{
-			From: "foo:tag",
-			Name: "foo",
-			Tag:  "tag",
-		},
-		{
-			From: "foo@sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-			Name: "foo",
-			ID:   "sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-		},
-		{
-			From:      "bar/foo",
-			Namespace: "bar",
-			Name:      "foo",
-		},
-		{
-			From:      "bar/foo:tag",
-			Namespace: "bar",
-			Name:      "foo",
-			Tag:       "tag",
-		},
-		{
-			From:      "bar/foo@sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-			Namespace: "bar",
-			Name:      "foo",
-			ID:        "sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-		},
-		{
-			From:      "bar/foo/baz",
-			Registry:  "bar",
-			Namespace: "foo",
-			Name:      "baz",
-		},
-		{
-			From:      "bar/library/baz",
-			Registry:  "bar",
-			Namespace: "library",
-			Name:      "baz",
-		},
-		{
-			From:      "bar/foo/baz:tag",
-			Registry:  "bar",
-			Namespace: "foo",
-			Name:      "baz",
-			Tag:       "tag",
-		},
-		{
-			From:      "bar/foo/baz@sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-			Registry:  "bar",
-			Namespace: "foo",
-			Name:      "baz",
-			ID:        "sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-		},
-		{
-			From:      "bar:5000/foo/baz",
-			Registry:  "bar:5000",
-			Namespace: "foo",
-			Name:      "baz",
-		},
-		{
-			From:      "bar:5000/library/baz",
-			Registry:  "bar:5000",
-			Namespace: "library",
-			Name:      "baz",
-		},
-		{
-			From:     "bar:5000/baz",
-			Registry: "bar:5000",
-			Name:     "baz",
-		},
-		{
-			From:      "bar:5000/foo/baz:tag",
-			Registry:  "bar:5000",
-			Namespace: "foo",
-			Name:      "baz",
-			Tag:       "tag",
-		},
-		{
-			From:      "bar:5000/foo/baz@sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-			Registry:  "bar:5000",
-			Namespace: "foo",
-			Name:      "baz",
-			ID:        "sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-		},
-		{
-			From:     "myregistry.io/foo",
-			Registry: "myregistry.io",
-			Name:     "foo",
-		},
-		{
-			From:     "localhost/bar",
-			Registry: "localhost",
-			Name:     "bar",
-		},
-		{
-			From:      "docker.io/library/myapp",
-			Registry:  "docker.io",
-			Namespace: "library",
-			Name:      "myapp",
-		},
-		{
-			From:      "docker.io/myapp",
-			Registry:  "docker.io",
-			Namespace: DockerDefaultNamespace,
-			Name:      "myapp",
-		},
-		{
-			From:      "docker.io/user/myapp",
-			Registry:  "docker.io",
-			Namespace: "user",
-			Name:      "myapp",
-		},
-		{
-			From:      "index.docker.io/bar",
-			Registry:  "index.docker.io",
-			Namespace: DockerDefaultNamespace,
-			Name:      "bar",
-		},
-		// TODO: test cases if ParseDockerImageReference validates segment length and allowed chars
-		//
-		// {
-		// 	// namespace/name == 255 chars
-		// 	From:      fmt.Sprintf("bar:5000/%s/%s:tag", strings.Repeat("a", 63), strings.Repeat("b", 191)),
-		// 	Registry:  "bar:5000",
-		// 	Namespace: strings.Repeat("a", 63),
-		// 	Name:      strings.Repeat("b", 191),
-		// 	Tag:       "tag",
-		// },
-		// {
-		// 	// namespace/name == 255 chars with implicit namespace
-		// 	From:      fmt.Sprintf("bar:5000/%s:tag", strings.Repeat("b", 247)),
-		// 	Registry:  "bar:5000",
-		// 	Namespace: DockerDefaultNamespace,
-		// 	Name:      strings.Repeat("b", 247),
-		// 	Tag:       "tag",
-		// },
-		// {
-		// 	// namespace/name > 255 chars
-		// 	From: fmt.Sprintf("bar:5000/%s/%s:tag", strings.Repeat("a", 63), strings.Repeat("b", 192)),
-		// 	Err:  true,
-		// },
-		// {
-		// 	// namespace/name > 255 chars with implicit namespace
-		// 	From: fmt.Sprintf("bar:5000/%s:tag", strings.Repeat("b", 248)),
-		// 	Err:  true,
-		// },
-		// {
-		// 	// namespace < 2 chars
-		// 	From: "bar:5000/a/b:tag",
-		// 	Err:  true,
-		// },
-		{
-			From: "https://bar:5000/foo/baz",
-			Err:  true,
-		},
-		{
-			From: "http://bar:5000/foo/baz@sha256:3c87c572822935df60f0f5d3665bd376841a7fcfeb806b5f212de6a00e9a7b25",
-			Err:  true,
-		},
-		{
-			From: "bar/foo/baz/biz",
-			Err:  true,
-		},
-		{
-			From: "ftp://baz/baz/biz",
-			Err:  true,
-		},
-		{
-			From: "",
-			Err:  true,
-		},
-	}
-
-	for _, testCase := range testCases {
-		ref, err := ParseDockerImageReference(testCase.From)
-		switch {
-		case err != nil && !testCase.Err:
-			t.Errorf("%s: unexpected error: %v", testCase.From, err)
-			continue
-		case err == nil && testCase.Err:
-			t.Errorf("%s: unexpected non-error", testCase.From)
-			continue
-		}
-		if e, a := testCase.Registry, ref.Registry; e != a {
-			t.Errorf("%s: registry: expected %q, got %q", testCase.From, e, a)
-		}
-		if e, a := testCase.Namespace, ref.Namespace; e != a {
-			t.Errorf("%s: namespace: expected %q, got %q", testCase.From, e, a)
-		}
-		if e, a := testCase.Name, ref.Name; e != a {
-			t.Errorf("%s: name: expected %q, got %q", testCase.From, e, a)
-		}
-		if e, a := testCase.Tag, ref.Tag; e != a {
-			t.Errorf("%s: tag: expected %q, got %q", testCase.From, e, a)
-		}
-		if e, a := testCase.ID, ref.ID; e != a {
-			t.Errorf("%s: id: expected %q, got %q", testCase.From, e, a)
-		}
-	}
-}
-
 func TestDockerImageReferenceAsRepository(t *testing.T) {
 	testCases := []struct {
 		Registry, Namespace, Name, Tag, ID string
@@ -1623,10 +1412,25 @@ func TestDockerImageReferenceEquality(t *testing.T) {
 }
 
 func TestPrioritizeTags(t *testing.T) {
-	tags := []string{"5", "other", "latest", "v5.5", "v6", "5.2.3", "v5.3.6-bother", "5.3.6-abba", "5.6"}
-	PrioritizeTags(tags)
-	if !reflect.DeepEqual(tags, []string{"latest", "v6", "5", "5.6", "v5.5", "v5.3.6-bother", "5.3.6-abba", "5.2.3", "other"}) {
-		t.Errorf("unexpected order: %v", tags)
+	tests := []struct {
+		tags     []string
+		expected []string
+	}{
+		{
+			tags:     []string{"other", "latest", "v5.5", "5.2.3", "v5.3.6-bother", "5.3.6-abba", "5.6"},
+			expected: []string{"latest", "5.6", "v5.5", "v5.3.6-bother", "5.3.6-abba", "5.2.3", "other"},
+		},
+		{
+			tags:     []string{"1.1-beta1", "1.2-rc1", "1.1-rc1", "1.1-beta2", "1.2-beta1", "1.2-alpha1", "1.2-beta4", "latest"},
+			expected: []string{"latest", "1.2-rc1", "1.2-beta4", "1.2-beta1", "1.2-alpha1", "1.1-rc1", "1.1-beta2", "1.1-beta1"},
+		},
+	}
+
+	for i, tc := range tests {
+		PrioritizeTags(tc.tags)
+		if !reflect.DeepEqual(tc.tags, tc.expected) {
+			t.Errorf("%d: unexpected order: %v", i, tc.tags)
+		}
 	}
 }
 

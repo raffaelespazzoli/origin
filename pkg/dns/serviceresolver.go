@@ -13,7 +13,7 @@ import (
 	kapi "k8s.io/kubernetes/pkg/api"
 	kendpoints "k8s.io/kubernetes/pkg/api/endpoints"
 	"k8s.io/kubernetes/pkg/api/errors"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	"k8s.io/kubernetes/pkg/util/validation"
 
 	"github.com/skynetservices/skydns/msg"
@@ -27,7 +27,7 @@ import (
 type ServiceResolver struct {
 	config    *server.Config
 	accessor  ServiceAccessor
-	endpoints kclient.EndpointsNamespacer
+	endpoints kcoreclient.EndpointsGetter
 	base      string
 	fallback  FallbackFunc
 }
@@ -42,7 +42,7 @@ type FallbackFunc func(name string, exact bool) (string, bool)
 
 // NewServiceResolver creates an object that will return DNS record entries for
 // SkyDNS based on service names.
-func NewServiceResolver(config *server.Config, accessor ServiceAccessor, endpoints kclient.EndpointsNamespacer, fn FallbackFunc) *ServiceResolver {
+func NewServiceResolver(config *server.Config, accessor ServiceAccessor, endpoints kcoreclient.EndpointsGetter, fn FallbackFunc) *ServiceResolver {
 	domain := config.Domain
 	if !strings.HasSuffix(domain, ".") {
 		domain = domain + "."
@@ -128,7 +128,7 @@ func (b *ServiceResolver) Records(dnsName string, exact bool) ([]msg.Service, er
 		}
 
 		// no clusterIP and not headless, no DNS
-		if len(svc.Spec.ClusterIP) == 0 {
+		if len(svc.Spec.ClusterIP) == 0 && svc.Spec.Type != kapi.ServiceTypeExternalName {
 			return nil, errNoSuchName
 		}
 
@@ -140,8 +140,15 @@ func (b *ServiceResolver) Records(dnsName string, exact bool) ([]msg.Service, er
 
 		// if has a portal IP and looking at svc
 		if svc.Spec.ClusterIP != kapi.ClusterIPNone && !retrieveEndpoints {
+			hostValue := svc.Spec.ClusterIP
+			targetStripValue := 2
+			if svc.Spec.Type == kapi.ServiceTypeExternalName {
+				hostValue = svc.Spec.ExternalName
+				targetStripValue = 0
+			}
+
 			defaultService := msg.Service{
-				Host: svc.Spec.ClusterIP,
+				Host: hostValue,
 				Port: 0,
 
 				Priority: 10,
@@ -153,6 +160,7 @@ func (b *ServiceResolver) Records(dnsName string, exact bool) ([]msg.Service, er
 			defaultService.Key = msg.Path(defaultName)
 
 			if len(svc.Spec.Ports) == 0 || !includePorts {
+				glog.V(4).Infof("Answered %s:%t with %#v", dnsName, exact, defaultService)
 				return []msg.Service{defaultService}, nil
 			}
 
@@ -175,14 +183,14 @@ func (b *ServiceResolver) Records(dnsName string, exact bool) ([]msg.Service, er
 				keyName := buildDNSName(defaultName, protocolSegment, portSegment)
 				services = append(services,
 					msg.Service{
-						Host: svc.Spec.ClusterIP,
+						Host: hostValue,
 						Port: int(port),
 
 						Priority: 10,
 						Weight:   10,
 						Ttl:      30,
 
-						TargetStrip: 2,
+						TargetStrip: targetStripValue,
 
 						Key: msg.Path(keyName),
 					},

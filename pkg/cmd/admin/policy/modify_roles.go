@@ -12,6 +12,7 @@ import (
 	kcmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
 	authorizationapi "github.com/openshift/origin/pkg/authorization/api"
+	"github.com/openshift/origin/pkg/cmd/templates"
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 	uservalidation "github.com/openshift/origin/pkg/user/api/validation"
 )
@@ -28,12 +29,13 @@ const (
 	RemoveClusterRoleFromUserRecommendedName  = "remove-cluster-role-from-user"
 )
 
-const (
-	addRoleToUserExample = `  # Add the 'view' role to user1 for the current project
-  %[1]s view user1
+var (
+	addRoleToUserExample = templates.Examples(`
+		# Add the 'view' role to user1 for the current project
+	  %[1]s view user1
 
-  # Add the 'edit' role to serviceaccount1 for the current project
-  %[1]s edit -z serviceaccount1`
+	  # Add the 'edit' role to serviceaccount1 for the current project
+	  %[1]s edit -z serviceaccount1`)
 )
 
 type RoleModificationOptions struct {
@@ -249,7 +251,7 @@ func (o *RoleModificationOptions) CompleteUserWithSA(f *clientcmd.Factory, args 
 		return errors.New("you must specify at least one user or service account")
 	}
 
-	osClient, _, err := f.Clients()
+	osClient, _, _, err := f.Clients()
 	if err != nil {
 		return err
 	}
@@ -275,7 +277,7 @@ func (o *RoleModificationOptions) Complete(f *clientcmd.Factory, args []string, 
 	o.RoleName = args[0]
 	*target = append(*target, args[1:]...)
 
-	osClient, _, err := f.Clients()
+	osClient, _, _, err := f.Clients()
 	if err != nil {
 		return err
 	}

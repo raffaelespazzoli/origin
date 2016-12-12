@@ -75,6 +75,8 @@ type templateRouter struct {
 	statsPassword string
 	// if the router can expose statistics it should expose them with this port
 	statsPort int
+	// if the router should allow wildcard routes.
+	allowWildcardRoutes bool
 	// rateLimitedCommitFunction is a rate limited commit (persist state + refresh the backend)
 	// function that coalesces and controls how often the router is reloaded.
 	rateLimitedCommitFunction *ratelimiter.RateLimitedFunction
@@ -84,6 +86,10 @@ type templateRouter struct {
 	lock sync.Mutex
 	// the router should only reload when the value is false
 	skipCommit bool
+	// If true, haproxy should only bind ports when it has route and endpoint state
+	bindPortsAfterSync bool
+	// whether the router state has been read from the api at least once
+	syncedAtLeastOnce bool
 }
 
 // templateRouterCfg holds all configuration items required to initialize the template router
@@ -98,8 +104,10 @@ type templateRouterCfg struct {
 	statsUser              string
 	statsPassword          string
 	statsPort              int
+	allowWildcardRoutes    bool
 	peerEndpointsKey       string
 	includeUDP             bool
+	bindPortsAfterSync     bool
 }
 
 // templateConfig is a subset of the templateRouter information that should be passed to the template for generating
@@ -121,6 +129,8 @@ type templateData struct {
 	StatsPassword string
 	//port to expose stats with (if the template supports it)
 	StatsPort int
+	// whether the router should bind the default ports
+	BindPorts bool
 }
 
 func newTemplateRouter(cfg templateRouterCfg) (*templateRouter, error) {
@@ -156,8 +166,10 @@ func newTemplateRouter(cfg templateRouterCfg) (*templateRouter, error) {
 		statsUser:              cfg.statsUser,
 		statsPassword:          cfg.statsPassword,
 		statsPort:              cfg.statsPort,
+		allowWildcardRoutes:    cfg.allowWildcardRoutes,
 		peerEndpointsKey:       cfg.peerEndpointsKey,
 		peerEndpoints:          []Endpoint{},
+		bindPortsAfterSync:     cfg.bindPortsAfterSync,
 
 		rateLimitedCommitFunction:    nil,
 		rateLimitedCommitStopChannel: make(chan struct{}),
@@ -201,6 +213,35 @@ func matchPattern(pattern, s string) bool {
 	}
 	glog.Errorf("Error with regex pattern in call to matchPattern: %v", err)
 	return false
+}
+
+// Generate a regular expression to match wildcard hosts (and paths if any)
+// for a [sub]domain.
+func genSubdomainWildcardRegexp(hostname, path string, exactPath bool) string {
+	subdomain := routeapi.GetDomainForHost(hostname)
+	if len(subdomain) == 0 {
+		glog.Warningf("Generating subdomain wildcard regexp - invalid host name %s", hostname)
+		return fmt.Sprintf("%s%s", hostname, path)
+	}
+
+	expr := regexp.QuoteMeta(fmt.Sprintf(".%s%s", subdomain, path))
+	if exactPath {
+		return fmt.Sprintf("^[^\\.]*%s$", expr)
+	}
+
+	return fmt.Sprintf("^[^\\.]*%s(|/.*)$", expr)
+}
+
+// Generates the host name to use for serving/certificate matching.
+// If wildcard is set, a wildcard host name (*.<subdomain>) is generated.
+func genCertificateHostName(hostname string, wildcard bool) string {
+	if wildcard {
+		if idx := strings.IndexRune(hostname, '.'); idx > 0 {
+			return fmt.Sprintf("*.%s", hostname[idx+1:])
+		}
+	}
+
+	return hostname
 }
 
 func endpointsForAlias(alias ServiceAliasConfig, svc ServiceUnit) []Endpoint {
@@ -373,6 +414,7 @@ func (r *templateRouter) writeConfig() error {
 			StatsUser:          r.statsUser,
 			StatsPassword:      r.statsPassword,
 			StatsPort:          r.statsPort,
+			BindPorts:          !r.bindPortsAfterSync || r.syncedAtLeastOnce,
 		}
 		if err := template.Execute(file, data); err != nil {
 			file.Close()
@@ -513,6 +555,10 @@ func (r *templateRouter) routeKey(route *routeapi.Route) string {
 // AddRoute adds a route for the given service id
 func (r *templateRouter) AddRoute(serviceID string, weight int32, route *routeapi.Route, host string) bool {
 	backendKey := r.routeKey(route)
+	wantsWildcardSupport := (route.Spec.WildcardPolicy == routeapi.WildcardPolicySubdomain)
+
+	// The router config trumps what the route asks for/wants.
+	wildcard := r.allowWildcardRoutes && wantsWildcardSupport
 
 	config, ok := r.state[backendKey]
 
@@ -522,6 +568,7 @@ func (r *templateRouter) AddRoute(serviceID string, weight int32, route *routeap
 			Namespace:        route.Namespace,
 			Host:             host,
 			Path:             route.Spec.Path,
+			IsWildcard:       wildcard,
 			Annotations:      route.Annotations,
 			ServiceUnitNames: make(map[string]int32),
 		}
@@ -534,9 +581,7 @@ func (r *templateRouter) AddRoute(serviceID string, weight int32, route *routeap
 		if tls != nil && len(tls.Termination) > 0 {
 			config.TLSTermination = tls.Termination
 
-			if tls.Termination == routeapi.TLSTerminationEdge {
-				config.InsecureEdgeTerminationPolicy = tls.InsecureEdgeTerminationPolicy
-			}
+			config.InsecureEdgeTerminationPolicy = tls.InsecureEdgeTerminationPolicy
 
 			if tls.Termination != routeapi.TLSTerminationPassthrough {
 				if config.Certificates == nil {
@@ -676,7 +721,7 @@ func (r *templateRouter) shouldWriteCerts(cfg *ServiceAliasConfig) bool {
 		}
 
 		if cfg.TLSTermination == routeapi.TLSTerminationReencrypt && hasReencryptDestinationCACert(cfg) {
-			glog.V(4).Info("a reencrypt route with host %s does not have an edge certificate, using default router certificate", cfg.Host)
+			glog.V(4).Infof("a reencrypt route with host %s does not have an edge certificate, using default router certificate", cfg.Host)
 			return true
 		}
 
@@ -701,6 +746,13 @@ func (r *templateRouter) SetSkipCommit(skipCommit bool) {
 		glog.V(4).Infof("Updating skip commit to: %t", skipCommit)
 		r.skipCommit = skipCommit
 	}
+}
+
+// SetSyncedAtLeastOnce indicates to the router that state has been
+// read from the api.
+func (r *templateRouter) SetSyncedAtLeastOnce() {
+	r.syncedAtLeastOnce = true
+	glog.V(4).Infof("Router state synchronized for the first time")
 }
 
 // HasServiceUnit attempts to retrieve a service unit for the given

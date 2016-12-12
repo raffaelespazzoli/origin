@@ -12,12 +12,16 @@
 // examples/db-templates/postgresql-persistent-template.json
 // examples/jenkins/jenkins-ephemeral-template.json
 // examples/jenkins/jenkins-persistent-template.json
-// examples/jenkins/pipeline/samplepipeline.json
+// examples/jenkins/pipeline/bluegreen-pipeline.yaml
+// examples/jenkins/pipeline/mapsapp-pipeline.yaml
+// examples/jenkins/pipeline/maven-pipeline.yaml
+// examples/jenkins/pipeline/samplepipeline.yaml
 // examples/quickstarts/cakephp-mysql.json
 // examples/quickstarts/dancer-mysql.json
 // examples/quickstarts/django-postgresql.json
 // examples/quickstarts/nodejs-mongodb.json
 // examples/quickstarts/rails-postgresql.json
+// examples/logging/logging-deployer.yaml
 // pkg/image/admission/imagepolicy/api/v1/default-policy.yaml
 // DO NOT EDIT!
 
@@ -71,14 +75,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "ruby"
+        "name": "ruby",
+        "annotations": {
+          "openshift.io/display-name": "Ruby"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Ruby applications",
+              "openshift.io/display-name": "Ruby (Latest)",
+              "description": "Build and run Ruby applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/tree/master/2.3/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Ruby available on OpenShift, including major versions updates.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby",
@@ -92,7 +100,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "2.0",
             "annotations": {
-              "description": "Build and run Ruby 2.0 applications",
+              "openshift.io/display-name": "Ruby 2.0",
+              "description": "Build and run Ruby 2.0 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/tree/master/2.0/README.md.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby:2.0,ruby",
@@ -107,7 +116,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "2.2",
             "annotations": {
-              "description": "Build and run Ruby 2.2 applications",
+              "openshift.io/display-name": "Ruby 2.2",
+              "description": "Build and run Ruby 2.2 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/tree/master/2.2/README.md.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby:2.2,ruby",
@@ -122,7 +132,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "2.3",
             "annotations": {
-              "description": "Build and run Ruby 2.3 applications",
+              "openshift.io/display-name": "Ruby 2.3",
+              "description": "Build and run Ruby 2.3 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/blob/master/2.3/README.md.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby:2.3,ruby",
@@ -141,14 +152,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "nodejs"
+        "name": "nodejs",
+        "annotations": {
+          "openshift.io/display-name": "Node.js"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run NodeJS applications",
+              "openshift.io/display-name": "Node.js (Latest)",
+              "description": "Build and run Node.js applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-nodejs-container/blob/master/4/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Node.js available on OpenShift, including major versions updates.",
               "iconClass": "icon-nodejs",
               "tags": "builder,nodejs",
               "supports":"nodejs",
@@ -162,9 +177,10 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "0.10",
             "annotations": {
-              "description": "Build and run NodeJS 0.10 applications",
+              "openshift.io/display-name": "Node.js 0.10",
+              "description": "DEPRECATED: Build and run Node.js 0.10 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-nodejs-container/blob/master/0.10/README.md.",
               "iconClass": "icon-nodejs",
-              "tags": "builder,nodejs",
+              "tags": "hidden,nodejs",
               "supports":"nodejs:0.10,nodejs:0.1,nodejs",
               "version": "0.10",
               "sampleRepo": "https://github.com/openshift/nodejs-ex.git"
@@ -177,7 +193,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "4",
             "annotations": {
-              "description": "Build and run NodeJS 4 applications",
+              "openshift.io/display-name": "Node.js 4",
+              "description": "Build and run Node.js 4 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-nodejs-container/blob/master/4/README.md.",
               "iconClass": "icon-nodejs",
               "tags": "builder,nodejs",
               "supports":"nodejs:4,nodejs",
@@ -196,14 +213,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "perl"
+        "name": "perl",
+        "annotations": {
+          "openshift.io/display-name": "Perl"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Perl applications",
+              "openshift.io/display-name": "Perl (Latest)",
+              "description": "Build and run Perl applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-perl-container/blob/master/5.20/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Perl available on OpenShift, including major versions updates.",
               "iconClass": "icon-perl",
               "tags": "builder,perl",
               "supports":"perl",
@@ -217,7 +238,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "5.16",
             "annotations": {
-              "description": "Build and run Perl 5.16 applications",
+              "openshift.io/display-name": "Perl 5.16",
+              "description": "Build and run Perl 5.16 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-perl-container/blob/master/5.16/README.md.",
               "iconClass": "icon-perl",
               "tags": "builder,perl",
               "supports":"perl:5.16,perl",
@@ -232,7 +254,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "5.20",
             "annotations": {
-              "description": "Build and run Perl 5.20 applications",
+              "openshift.io/display-name": "Perl 5.20",
+              "description": "Build and run Perl 5.20 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-perl-container/blob/master/5.20/README.md.",
               "iconClass": "icon-perl",
               "tags": "builder,perl",
               "supports":"perl:5.20,perl",
@@ -252,14 +275,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "php"
+        "name": "php",
+        "annotations": {
+          "openshift.io/display-name": "PHP"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run PHP applications",
+              "openshift.io/display-name": "PHP (Latest)",
+              "description": "Build and run PHP applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-php-container/blob/master/5.6/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of PHP available on OpenShift, including major versions updates.",
               "iconClass": "icon-php",
               "tags": "builder,php",
               "supports":"php",
@@ -273,7 +300,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "5.5",
             "annotations": {
-              "description": "Build and run PHP 5.5 applications",
+              "openshift.io/display-name": "PHP 5.5",
+              "description": "Build and run PHP 5.5 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-php-container/blob/master/5.5/README.md.",
               "iconClass": "icon-php",
               "tags": "builder,php",
               "supports":"php:5.5,php",
@@ -288,7 +316,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "5.6",
             "annotations": {
-              "description": "Build and run PHP 5.6 applications",
+              "openshift.io/display-name": "PHP 5.6",
+              "description": "Build and run PHP 5.6 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-php-container/blob/master/5.6/README.md.",
               "iconClass": "icon-php",
               "tags": "builder,php",
               "supports":"php:5.6,php",
@@ -307,14 +336,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "python"
+        "name": "python",
+        "annotations": {
+          "openshift.io/display-name": "Python"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Python applications",
+              "openshift.io/display-name": "Python (Latest)",
+              "description": "Build and run Python applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.5/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Python available on OpenShift, including major versions updates.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python",
@@ -328,7 +361,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "3.3",
             "annotations": {
-              "description": "Build and run Python 3.3 applications",
+              "openshift.io/display-name": "Python 3.3",
+              "description": "Build and run Python 3.3 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.3/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:3.3,python",
@@ -343,7 +377,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "2.7",
             "annotations": {
-              "description": "Build and run Python 2.7 applications",
+              "openshift.io/display-name": "Python 2.7",
+              "description": "Build and run Python 2.7 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/2.7/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:2.7,python",
@@ -358,7 +393,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "3.4",
             "annotations": {
-              "description": "Build and run Python 3.4 applications",
+              "openshift.io/display-name": "Python 3.4",
+              "description": "Build and run Python 3.4 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.4/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:3.4,python",
@@ -373,7 +409,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "3.5",
             "annotations": {
-              "description": "Build and run Python 3.5 applications",
+              "openshift.io/display-name": "Python 3.5",
+              "description": "Build and run Python 3.5 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.5/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:3.5,python",
@@ -392,14 +429,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "wildfly"
+        "name": "wildfly",
+        "annotations": {
+          "openshift.io/display-name": "WildFly"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Java applications on Wildfly",
+              "openshift.io/display-name": "WildFly (Latest)",
+              "description": "Build and run WildFly applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/openshift-s2i/s2i-wildfly/blob/master/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of WildFly available on OpenShift, including major versions updates.",
               "iconClass": "icon-wildfly",
               "tags": "builder,wildfly,java",
               "supports":"jee,java",
@@ -407,13 +448,14 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
             },
             "from": {
               "kind": "ImageStreamTag",
-              "name": "10.0"
+              "name": "10.1"
             }
           },
           {
             "name": "8.1",
             "annotations": {
-              "description": "Build and run Java applications on Wildfly 8.1",
+              "openshift.io/display-name": "WildFly 8.1",
+              "description": "Build and run WildFly 8.1 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/openshift-s2i/s2i-wildfly/blob/master/README.md.",
               "iconClass": "icon-wildfly",
               "tags": "builder,wildfly,java",
               "supports":"wildfly:8.1,jee,java",
@@ -428,7 +470,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "9.0",
             "annotations": {
-              "description": "Build and run Java applications on Wildfly 9.0",
+              "openshift.io/display-name": "WildFly 9.0",
+              "description": "Build and run WildFly 9.0 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/openshift-s2i/s2i-wildfly/blob/master/README.md.",
               "iconClass": "icon-wildfly",
               "tags": "builder,wildfly,java",
               "supports":"wildfly:9.0,jee,java",
@@ -443,7 +486,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "10.0",
             "annotations": {
-              "description": "Build and run Java applications on Wildfly 10.0",
+              "openshift.io/display-name": "WildFly 10.0",
+              "description": "Build and run WildFly 10.0 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/openshift-s2i/s2i-wildfly/blob/master/README.md.",
               "iconClass": "icon-wildfly",
               "tags": "builder,wildfly,java",
               "supports":"wildfly:10.0,jee,java",
@@ -454,6 +498,22 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
               "kind": "DockerImage",
               "name": "openshift/wildfly-100-centos7:latest"
             }
+          },
+          {
+            "name": "10.1",
+            "annotations": {
+              "openshift.io/display-name": "WildFly 10.1",
+              "description": "Build and run WildFly 10.1 applications on CentOS 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/openshift-s2i/s2i-wildfly/blob/master/README.md.",
+              "iconClass": "icon-wildfly",
+              "tags": "builder,wildfly,java",
+              "supports":"wildfly:10.1,jee,java",
+              "version": "10.1",
+              "sampleRepo": "https://github.com/bparees/openshift-jee-sample.git"
+            },
+            "from": {
+              "kind": "DockerImage",
+              "name": "openshift/wildfly-101-centos7:latest"
+            }
           }
         ]
       }
@@ -462,14 +522,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "mysql"
+        "name": "mysql",
+        "annotations": {
+          "openshift.io/display-name": "MySQL"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a MySQL database",
+              "openshift.io/display-name": "MySQL (Latest)",
+              "description": "Provides a MySQL database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mysql-container/tree/master/5.6/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of MySQL available on OpenShift, including major versions updates.",
               "iconClass": "icon-mysql-database",
               "tags": "mysql"
             },
@@ -481,7 +545,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "5.5",
             "annotations": {
-              "description": "Provides a MySQL v5.5 database",
+              "openshift.io/display-name": "MySQL 5.5",
+              "description": "Provides a MySQL 5.5 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mysql-container/tree/master/5.5/README.md.",
               "iconClass": "icon-mysql-database",
               "tags": "mysql",
               "version": "5.5"
@@ -494,7 +559,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "5.6",
             "annotations": {
-              "description": "Provides a MySQL v5.6 database",
+              "openshift.io/display-name": "MySQL 5.6",
+              "description": "Provides a MySQL 5.6 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mysql-container/tree/master/5.6/README.md.",
               "iconClass": "icon-mysql-database",
               "tags": "mysql",
               "version": "5.6"
@@ -511,14 +577,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "mariadb"
+        "name": "mariadb",
+        "annotations": {
+          "openshift.io/display-name": "MariaDB"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a MariaDB database",
+              "openshift.io/display-name": "MariaDB (Latest)",
+              "description": "Provides a MariaDB database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/tree/master/10.1/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of MariaDB available on OpenShift, including major versions updates.",
               "iconClass": "icon-mariadb",
               "tags": "mariadb"
             },
@@ -530,7 +600,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "10.1",
             "annotations": {
-              "description": "Provides a MariaDB v10.1 database",
+              "openshift.io/display-name": "MariaDB 10.1",
+              "description": "Provides a MariaDB 10.1 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/tree/master/10.1/README.md.",
               "iconClass": "icon-mariadb",
               "tags": "mariadb",
               "version": "10.1"
@@ -547,14 +618,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "postgresql"
+        "name": "postgresql",
+        "annotations": {
+          "openshift.io/display-name": "PostgreSQL"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a PostgreSQL database",
+              "openshift.io/display-name": "PostgreSQL (Latest)",
+              "description": "Provides a PostgreSQL database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.5.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of PostgreSQL available on OpenShift, including major versions updates.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql"
             },
@@ -566,7 +641,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "9.2",
             "annotations": {
-              "description": "Provides a PostgreSQL v9.2 database",
+              "openshift.io/display-name": "PostgreSQL 9.2",
+              "description": "Provides a PostgreSQL 9.2 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.2.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql",
               "version": "9.2"
@@ -579,7 +655,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "9.4",
             "annotations": {
-              "description": "Provides a PostgreSQL v9.4 database",
+              "openshift.io/display-name": "PostgreSQL 9.4",
+              "description": "Provides a PostgreSQL 9.4 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.4.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql",
               "version": "9.4"
@@ -592,7 +669,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "9.5",
             "annotations": {
-              "description": "Provides a PostgreSQL v9.5 database",
+              "openshift.io/display-name": "PostgreSQL 9.5",
+              "description": "Provides a PostgreSQL 9.5 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.5.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql",
               "version": "9.5"
@@ -609,14 +687,18 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "mongodb"
+        "name": "mongodb",
+        "annotations": {
+          "openshift.io/display-name": "MongoDB"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a MongoDB database",
+              "openshift.io/display-name": "MongoDB (Latest)",
+              "description": "Provides a MongoDB database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/3.2/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of MongoDB available on OpenShift, including major versions updates.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb"
             },
@@ -628,7 +710,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "2.4",
             "annotations": {
-              "description": "Provides a MongoDB v2.4 database",
+              "openshift.io/display-name": "MongoDB 2.4",
+              "description": "Provides a MongoDB 2.4 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/2.4/README.md.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb",
               "version": "2.4"
@@ -641,7 +724,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "2.6",
             "annotations": {
-              "description": "Provides a MongoDB v2.6 database",
+              "openshift.io/display-name": "MongoDB 2.6",
+              "description": "Provides a MongoDB 2.6 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/2.6/README.md.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb",
               "version": "2.6"
@@ -654,7 +738,8 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
           {
             "name": "3.2",
             "annotations": {
-              "description": "Provides a MongoDB v3.2 database",
+              "openshift.io/display-name": "MongoDB 3.2",
+              "description": "Provides a MongoDB 3.2 database on CentOS 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/3.2/README.md.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb",
               "version": "3.2"
@@ -671,26 +756,31 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "jenkins"
+        "name": "jenkins",
+        "annotations": {
+          "openshift.io/display-name": "Jenkins"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a Jenkins server",
+              "openshift.io/display-name": "Jenkins (Latest)",
+              "description": "Provides a Jenkins server on CentOS 7. For more information about using this container image, including OpenShift considerations, see https://github.com/openshift/jenkins/blob/master/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Jenkins available on OpenShift, including major versions updates.",
               "iconClass": "icon-jenkins",
               "tags": "jenkins"
             },
             "from": {
               "kind": "ImageStreamTag",
-              "name": "1"
+              "name": "2"
             }
           },
           {
             "name": "1",
             "annotations": {
-              "description": "Provides a Jenkins server",
+              "openshift.io/display-name": "Jenkins 1.X",
+              "description": "Provides a Jenkins 1.X server on CentOS 7. For more information about using this container image, including OpenShift considerations, see https://github.com/openshift/jenkins/blob/master/README.md.",
               "iconClass": "icon-jenkins",
               "tags": "jenkins",
               "version": "1.x"
@@ -698,6 +788,20 @@ var _examplesImageStreamsImageStreamsCentos7Json = []byte(`{
             "from": {
               "kind": "DockerImage",
               "name": "openshift/jenkins-1-centos7:latest"
+            }
+          },
+          {
+            "name": "2",
+            "annotations": {
+              "openshift.io/display-name": "Jenkins 2.X",
+              "description": "Provides a Jenkins v2.x server on CentOS 7. For more information about using this container image, including OpenShift considerations, see https://github.com/openshift/jenkins/blob/master/README.md.",
+              "iconClass": "icon-jenkins",
+              "tags": "jenkins",
+              "version": "2.x"
+            },
+            "from": {
+              "kind": "DockerImage",
+              "name": "openshift/jenkins-2-centos7:latest"
             }
           }
         ]
@@ -731,14 +835,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "ruby"
+        "name": "ruby",
+        "annotations": {
+          "openshift.io/display-name": "Ruby"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Ruby applications",
+              "openshift.io/display-name": "Ruby (Latest)",
+              "description": "Build and run Ruby applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/tree/master/2.3/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Ruby available on OpenShift, including major versions updates.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby",
@@ -752,7 +860,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "2.0",
             "annotations": {
-              "description": "Build and run Ruby 2.0 applications",
+              "openshift.io/display-name": "Ruby 2.0",
+              "description": "Build and run Ruby 2.0 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/tree/master/2.0/README.md.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby:2.0,ruby",
@@ -767,7 +876,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "2.2",
             "annotations": {
-              "description": "Build and run Ruby 2.2 applications",
+              "openshift.io/display-name": "Ruby 2.2",
+              "description": "Build and run Ruby 2.2 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/tree/master/2.2/README.md.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby:2.2,ruby",
@@ -782,7 +892,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "2.3",
             "annotations": {
-              "description": "Build and run Ruby 2.3 applications",
+              "openshift.io/display-name": "Ruby 2.3",
+              "description": "Build and run Ruby 2.3 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-ruby-container/blob/master/2.3/README.md.",
               "iconClass": "icon-ruby",
               "tags": "builder,ruby",
               "supports": "ruby:2.3,ruby",
@@ -801,14 +912,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "nodejs"
+        "name": "nodejs",
+        "annotations": {
+          "openshift.io/display-name": "Node.js"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run NodeJS applications",
+              "openshift.io/display-name": "Node.js (Latest)",
+              "description": "Build and run Node.js applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-nodejs-container/blob/master/4/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Node.js available on OpenShift, including major versions updates.",
               "iconClass": "icon-nodejs",
               "tags": "builder,nodejs",
               "supports":"nodejs",
@@ -822,9 +937,10 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "0.10",
             "annotations": {
-              "description": "Build and run NodeJS 0.10 applications",
+              "openshift.io/display-name": "Node.js 0.10",
+              "description": "DEPRECATED: Build and run Node.js 0.10 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-nodejs-container/blob/master/0.10/README.md.",
               "iconClass": "icon-nodejs",
-              "tags": "builder,nodejs",
+              "tags": "hidden,nodejs",
               "supports":"nodejs:0.10,nodejs:0.1,nodejs",
               "version": "0.10",
               "sampleRepo": "https://github.com/openshift/nodejs-ex.git"
@@ -837,7 +953,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "4",
             "annotations": {
-              "description": "Build and run NodeJS 4.x applications",
+              "openshift.io/display-name": "Node.js 4",
+              "description": "Build and run Node.js 4 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-nodejs-container/blob/master/4/README.md.",
               "iconClass": "icon-nodejs",
               "tags": "builder,nodejs",
               "supports":"nodejs:4,nodejs",
@@ -856,14 +973,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "perl"
+        "name": "perl",
+        "annotations": {
+          "openshift.io/display-name": "Perl"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Perl applications",
+              "openshift.io/display-name": "Perl (Latest)",
+              "description": "Build and run Perl applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-perl-container/blob/master/5.20/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Perl available on OpenShift, including major versions updates.",
               "iconClass": "icon-perl",
               "tags": "builder,perl",
               "supports":"perl",
@@ -877,7 +998,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "5.16",
             "annotations": {
-              "description": "Build and run Perl 5.16 applications",
+              "openshift.io/display-name": "Perl 5.16",
+              "description": "Build and run Perl 5.16 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-perl-container/blob/master/5.16/README.md.",
               "iconClass": "icon-perl",
               "tags": "builder,perl",
               "supports":"perl:5.16,perl",
@@ -892,7 +1014,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "5.20",
             "annotations": {
-              "description": "Build and run Perl 5.20 applications",
+              "openshift.io/display-name": "Perl 5.20",
+              "description": "Build and run Perl 5.20 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-perl-container/blob/master/5.20/README.md.",
               "iconClass": "icon-perl",
               "tags": "builder,perl",
               "supports":"perl:5.20,perl",
@@ -912,14 +1035,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "php"
+        "name": "php",
+        "annotations": {
+          "openshift.io/display-name": "PHP"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run PHP applications",
+              "openshift.io/display-name": "PHP (Latest)",
+              "description": "Build and run PHP applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-php-container/blob/master/5.6/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of PHP available on OpenShift, including major versions updates.",
               "iconClass": "icon-php",
               "tags": "builder,php",
               "supports":"php",
@@ -933,7 +1060,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "5.5",
             "annotations": {
-              "description": "Build and run PHP 5.5 applications",
+              "openshift.io/display-name": "PHP 5.5",
+              "description": "Build and run PHP 5.5 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-php-container/blob/master/5.5/README.md.",
               "iconClass": "icon-php",
               "tags": "builder,php",
               "supports":"php:5.5,php",
@@ -948,7 +1076,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "5.6",
             "annotations": {
-              "description": "Build and run PHP 5.6 applications",
+              "openshift.io/display-name": "PHP 5.6",
+              "description": "Build and run PHP 5.6 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-php-container/blob/master/5.6/README.md.",
               "iconClass": "icon-php",
               "tags": "builder,php",
               "supports":"php:5.6,php",
@@ -967,14 +1096,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "python"
+        "name": "python",
+        "annotations": {
+          "openshift.io/display-name": "Python"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Build and run Python applications",
+              "openshift.io/display-name": "Python (Latest)",
+              "description": "Build and run Python applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.5/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Python available on OpenShift, including major versions updates.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python",
@@ -988,7 +1121,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "3.3",
             "annotations": {
-              "description": "Build and run Python 3.3 applications",
+              "openshift.io/display-name": "Python 3.3",
+              "description": "Build and run Python 3.3 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.3/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:3.3,python",
@@ -1003,7 +1137,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "2.7",
             "annotations": {
-              "description": "Build and run Python 2.7 applications",
+              "openshift.io/display-name": "Python 2.7",
+              "description": "Build and run Python 2.7 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/2.7/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:2.7,python",
@@ -1018,7 +1153,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "3.4",
             "annotations": {
-              "description": "Build and run Python 3.4 applications",
+              "openshift.io/display-name": "Python 3.4",
+              "description": "Build and run Python 3.4 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.4/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:3.4,python",
@@ -1033,7 +1169,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "3.5",
             "annotations": {
-              "description": "Build and run Python 3.5 applications",
+              "openshift.io/display-name": "Python 3.5",
+              "description": "Build and run Python 3.5 applications on RHEL 7. For more information about using this builder image, including OpenShift considerations, see https://github.com/sclorg/s2i-python-container/blob/master/3.5/README.md.",
               "iconClass": "icon-python",
               "tags": "builder,python",
               "supports":"python:3.5,python",
@@ -1052,14 +1189,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "mysql"
+        "name": "mysql",
+        "annotations": {
+          "openshift.io/display-name": "MySQL"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a MySQL database",
+              "openshift.io/display-name": "MySQL (Latest)",
+              "description": "Provides a MySQL database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mysql-container/tree/master/5.6/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of MySQL available on OpenShift, including major versions updates.",
               "iconClass": "icon-mysql-database",
               "tags": "mysql"
             },
@@ -1071,7 +1212,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "5.5",
             "annotations": {
-              "description": "Provides a MySQL v5.5 database",
+              "openshift.io/display-name": "MySQL 5.5",
+              "description": "Provides a MySQL 5.5 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mysql-container/tree/master/5.5/README.md.",
               "iconClass": "icon-mysql-database",
               "tags": "mysql",
               "version": "5.5"
@@ -1084,7 +1226,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "5.6",
             "annotations": {
-              "description": "Provides a MySQL v5.6 database",
+              "openshift.io/display-name": "MySQL 5.6",
+              "description": "Provides a MySQL 5.6 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mysql-container/tree/master/5.6/README.md.",
               "iconClass": "icon-mysql-database",
               "tags": "mysql",
               "version": "5.6"
@@ -1101,14 +1244,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "mariadb"
+        "name": "mariadb",
+        "annotations": {
+          "openshift.io/display-name": "MariaDB"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a MariaDB database",
+              "openshift.io/display-name": "MariaDB (Latest)",
+              "description": "Provides a MariaDB database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/tree/master/10.1/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of MariaDB available on OpenShift, including major versions updates.",
               "iconClass": "icon-mariadb",
               "tags": "mariadb"
             },
@@ -1120,7 +1267,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "10.1",
             "annotations": {
-              "description": "Provides a MariaDB v10.1 database",
+              "openshift.io/display-name": "MariaDB 10.1",
+              "description": "Provides a MariaDB 10.1 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/tree/master/10.1/README.md.",
               "iconClass": "icon-mariadb",
               "tags": "mariadb",
               "version": "10.1"
@@ -1137,14 +1285,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "postgresql"
+        "name": "postgresql",
+        "annotations": {
+          "openshift.io/display-name": "PostgreSQL"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a PostgreSQL database",
+              "openshift.io/display-name": "PostgreSQL (Latest)",
+              "description": "Provides a PostgreSQL database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.5.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of PostgreSQL available on OpenShift, including major versions updates.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql"
             },
@@ -1156,7 +1308,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "9.2",
             "annotations": {
-              "description": "Provides a PostgreSQL v9.2 database",
+              "openshift.io/display-name": "PostgreSQL 9.2",
+              "description": "Provides a PostgreSQL 9.2 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.2.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql",
               "version": "9.2"
@@ -1169,7 +1322,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "9.4",
             "annotations": {
-              "description": "Provides a PostgreSQL v9.4 database",
+              "openshift.io/display-name": "PostgreSQL 9.4",
+              "description": "Provides a PostgreSQL 9.4 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.4.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql",
               "version": "9.4"
@@ -1182,7 +1336,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "9.5",
             "annotations": {
-              "description": "Provides a PostgreSQL v9.5 database",
+              "openshift.io/display-name": "PostgreSQL 9.5",
+              "description": "Provides a PostgreSQL 9.5 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/tree/master/9.5.",
               "iconClass": "icon-postgresql",
               "tags": "postgresql",
               "version": "9.5"
@@ -1199,14 +1354,18 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "mongodb"
+        "name": "mongodb",
+        "annotations": {
+          "openshift.io/display-name": "MongoDB"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a MongoDB database",
+              "openshift.io/display-name": "MongoDB (Latest)",
+              "description": "Provides a MongoDB database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/3.2/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of MongoDB available on OpenShift, including major versions updates.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb"
             },
@@ -1218,7 +1377,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "2.4",
             "annotations": {
-              "description": "Provides a MongoDB v2.4 database",
+              "openshift.io/display-name": "MongoDB 2.4",
+              "description": "Provides a MongoDB 2.4 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/2.4/README.md.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb",
               "version": "2.4"
@@ -1231,7 +1391,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "2.6",
             "annotations": {
-              "description": "Provides a MongoDB v2.6 database",
+              "openshift.io/display-name": "MongoDB 2.6",
+              "description": "Provides a MongoDB 2.6 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/2.6/README.md.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb",
               "version": "2.6"
@@ -1244,7 +1405,8 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
           {
             "name": "3.2",
             "annotations": {
-              "description": "Provides a MongoDB v3.2 database",
+              "openshift.io/display-name": "MongoDB 3.2",
+              "description": "Provides a MongoDB 3.2 database on RHEL 7. For more information about using this database image, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/tree/master/3.2/README.md.",
               "iconClass": "icon-mongodb",
               "tags": "mongodb",
               "version": "3.2"
@@ -1261,26 +1423,31 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "jenkins"
+        "name": "jenkins",
+        "annotations": {
+          "openshift.io/display-name": "Jenkins"
+        }
       },
       "spec": {
         "tags": [
           {
             "name": "latest",
             "annotations": {
-              "description": "Provides a Jenkins server",
+              "openshift.io/display-name": "Jenkins (Latest)",
+              "description": "Provides a Jenkins server on RHEL 7. For more information about using this container image, including OpenShift considerations, see https://github.com/openshift/jenkins/blob/master/README.md.\n\nWARNING: By selecting this tag, your application will automatically update to use the latest version of Jenkins available on OpenShift, including major versions updates.",
               "iconClass": "icon-jenkins",
               "tags": "jenkins"
             },
             "from": {
               "kind": "ImageStreamTag",
-              "name": "1"
+              "name": "2"
             }
           },
           {
             "name": "1",
             "annotations": {
-              "description": "Provides a Jenkins server",
+              "openshift.io/display-name": "Jenkins 1.X",
+              "description": "Provides a Jenkins 1.X server on RHEL 7. For more information about using this container image, including OpenShift considerations, see https://github.com/openshift/jenkins/blob/master/README.md.",
               "iconClass": "icon-jenkins",
               "tags": "jenkins",
               "version": "1.x"
@@ -1288,6 +1455,20 @@ var _examplesImageStreamsImageStreamsRhel7Json = []byte(`{
             "from": {
               "kind": "DockerImage",
               "name": "registry.access.redhat.com/openshift3/jenkins-1-rhel7:latest"
+            }
+          },
+          {
+            "name": "2",
+            "annotations": {
+              "openshift.io/display-name": "Jenkins 2.X",
+              "description": "Provides a Jenkins 2.X server on RHEL 7. For more information about using this container image, including OpenShift considerations, see https://github.com/openshift/jenkins/blob/master/README.md.",
+              "iconClass": "icon-jenkins",
+              "tags": "jenkins",
+              "version": "2.x"
+            },
+            "from": {
+              "kind": "DockerImage",
+              "name": "registry.access.redhat.com/openshift3/jenkins-2-rhel7:latest"
             }
           }
         ]
@@ -1318,12 +1499,29 @@ var _examplesDbTemplatesMariadbEphemeralTemplateJson = []byte(`{
   "metadata": {
     "name": "mariadb-ephemeral",
     "annotations": {
-      "description": "MariaDB database service, without persistent storage. WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
+      "openshift.io/display-name": "MariaDB (Ephemeral)",
+      "description": "MariaDB database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/blob/master/10.1/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
       "iconClass": "icon-mariadb",
       "tags": "database,mariadb"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${MYSQL_USER}\n       Password: ${MYSQL_PASSWORD}\n  Database Name: ${MYSQL_DATABASE}\n Connection URL: mysql://${DATABASE_SERVICE_NAME}:3306/\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/blob/master/10.1/README.md.",
+  "labels": {
+    "template": "mariadb-persistent-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${MYSQL_USER}",
+        "databasePassword" : "${MYSQL_PASSWORD}",
+        "databaseRootPassword" : "${MYSQL_ROOT_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -1409,11 +1607,30 @@ var _examplesDbTemplatesMariadbEphemeralTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "MYSQL_USER",
-                    "value": "${MYSQL_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_PASSWORD",
-                    "value": "${MYSQL_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseRootPassword"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_DATABASE",
@@ -1485,16 +1702,21 @@ var _examplesDbTemplatesMariadbEphemeralTemplateJson = []byte(`{
       "required": true
     },
     {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "displayName": "MariaDB root Password",
+      "description": "Password for the MariaDB root user.",
+      "generate": "expression",
+      "from": "[a-zA-Z0-9]{16}",
+      "required": true
+    },
+    {
       "name": "MYSQL_DATABASE",
       "displayName": "MariaDB Database Name",
       "description": "Name of the MariaDB database accessed.",
       "value": "sampledb",
       "required": true
     }
-  ],
-  "labels": {
-    "template": "mariadb-persistent-template"
-  }
+  ]
 }
 `)
 
@@ -1519,12 +1741,29 @@ var _examplesDbTemplatesMariadbPersistentTemplateJson = []byte(`{
   "metadata": {
     "name": "mariadb-persistent",
     "annotations": {
-      "description": "MariaDB database service, with persistent storage.  Scaling to more than one replica is not supported.  You must have persistent volumes available in your cluster to use this template.",
+      "openshift.io/display-name": "MariaDB (Persistent)",
+      "description": "MariaDB database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/blob/master/10.1/README.md.\n\nNOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster to use this template.",
       "iconClass": "icon-mariadb",
       "tags": "database,mariadb"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${MYSQL_USER}\n       Password: ${MYSQL_PASSWORD}\n  Database Name: ${MYSQL_DATABASE}\n Connection URL: mysql://${DATABASE_SERVICE_NAME}:3306/\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/blob/master/10.1/README.md.",
+  "labels": {
+    "template": "mariadb-persistent-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${MYSQL_USER}",
+        "databasePassword" : "${MYSQL_PASSWORD}",
+        "databaseRootPassword" : "${MYSQL_ROOT_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -1627,11 +1866,30 @@ var _examplesDbTemplatesMariadbPersistentTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "MYSQL_USER",
-                    "value": "${MYSQL_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_PASSWORD",
-                    "value": "${MYSQL_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseRootPassword"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_DATABASE",
@@ -1703,6 +1961,14 @@ var _examplesDbTemplatesMariadbPersistentTemplateJson = []byte(`{
       "required": true
     },
     {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "displayName": "MariaDB root Password",
+      "description": "Password for the MariaDB root user.",
+      "generate": "expression",
+      "from": "[a-zA-Z0-9]{16}",
+      "required": true
+    },
+    {
       "name": "MYSQL_DATABASE",
       "displayName": "MariaDB Database Name",
       "description": "Name of the MariaDB database accessed.",
@@ -1716,10 +1982,7 @@ var _examplesDbTemplatesMariadbPersistentTemplateJson = []byte(`{
       "value": "1Gi",
       "required": true
     }
-  ],
-  "labels": {
-    "template": "mariadb-persistent-template"
-  }
+  ]
 }
 `)
 
@@ -1745,12 +2008,29 @@ var _examplesDbTemplatesMongodbEphemeralTemplateJson = []byte(`{
     "name": "mongodb-ephemeral",
     "creationTimestamp": null,
     "annotations": {
-      "description": "MongoDB database service, without persistent storage. WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
+      "openshift.io/display-name": "MongoDB (Ephemeral)",
+      "description": "MongoDB database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/blob/master/3.2/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
       "iconClass": "icon-mongodb",
       "tags": "database,mongodb"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${MONGODB_USER}\n       Password: ${MONGODB_PASSWORD}\n  Database Name: ${MONGODB_DATABASE}\n Connection URL: mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${DATABASE_SERVICE_NAME}/${MONGODB_DATABASE}\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/blob/master/3.2/README.md.",
+  "labels": {
+    "template": "mongodb-ephemeral-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${MONGODB_USER}",
+        "databasePassword" : "${MONGODB_PASSWORD}",
+        "databaseAdminPassword" : "${MONGODB_ADMIN_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -1799,7 +2079,7 @@ var _examplesDbTemplatesMongodbEphemeralTemplateJson = []byte(`{
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "mongodb:3.2",
+                "name": "mongodb:${MONGODB_VERSION}",
                 "namespace": "${NAMESPACE}"
               },
               "lastTriggeredImage": ""
@@ -1848,19 +2128,34 @@ var _examplesDbTemplatesMongodbEphemeralTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "MONGODB_USER",
-                    "value": "${MONGODB_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_PASSWORD",
-                    "value": "${MONGODB_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MONGODB_ADMIN_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseAdminPassword"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_DATABASE",
                     "value": "${MONGODB_DATABASE}"
-                  },
-                  {
-                    "name": "MONGODB_ADMIN_PASSWORD",
-                    "value": "${MONGODB_ADMIN_PASSWORD}"
                   }
                 ],
                 "resources": {
@@ -1949,12 +2244,15 @@ var _examplesDbTemplatesMongodbEphemeralTemplateJson = []byte(`{
       "generate": "expression",
       "from": "[a-zA-Z0-9]{16}",
       "required": true
+    },
+    {
+      "name": "MONGODB_VERSION",
+      "displayName": "Version of MongoDB Image",
+      "description": "Version of MongoDB image to be used (2.4, 2.6, 3.2 or latest).",
+      "value": "3.2",
+      "required": true
     }
-  ],
-  "labels": {
-    "template": "mongodb-ephemeral-template"
-  },
-  "message": "You can connect to the database using MongoDB connection URL mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${DATABASE_SERVICE_NAME}/${MONGODB_DATABASE}"
+  ]
 }
 `)
 
@@ -1980,12 +2278,29 @@ var _examplesDbTemplatesMongodbPersistentTemplateJson = []byte(`{
     "name": "mongodb-persistent",
     "creationTimestamp": null,
     "annotations": {
-      "description": "MongoDB database service, with persistent storage.  Scaling to more than one replica is not supported.  You must have persistent volumes available in your cluster to use this template.",
+      "openshift.io/display-name": "MongoDB (Persistent)",
+      "description": "MongoDB database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/blob/master/3.2/README.md.\n\nNOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster to use this template.",
       "iconClass": "icon-mongodb",
       "tags": "database,mongodb"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${MONGODB_USER}\n       Password: ${MONGODB_PASSWORD}\n  Database Name: ${MONGODB_DATABASE}\n Connection URL: mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${DATABASE_SERVICE_NAME}/${MONGODB_DATABASE}\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/blob/master/3.2/README.md.",
+  "labels": {
+    "template": "mongodb-persistent-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${MONGODB_USER}",
+        "databasePassword" : "${MONGODB_PASSWORD}",
+        "databaseAdminPassword" : "${MONGODB_ADMIN_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -2051,7 +2366,7 @@ var _examplesDbTemplatesMongodbPersistentTemplateJson = []byte(`{
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "mongodb:3.2",
+                "name": "mongodb:${MONGODB_VERSION}",
                 "namespace": "${NAMESPACE}"
               },
               "lastTriggeredImage": ""
@@ -2100,19 +2415,34 @@ var _examplesDbTemplatesMongodbPersistentTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "MONGODB_USER",
-                    "value": "${MONGODB_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_PASSWORD",
-                    "value": "${MONGODB_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MONGODB_ADMIN_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseAdminPassword"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_DATABASE",
                     "value": "${MONGODB_DATABASE}"
-                  },
-                  {
-                    "name": "MONGODB_ADMIN_PASSWORD",
-                    "value": "${MONGODB_ADMIN_PASSWORD}"
                   }
                 ],
                 "resources": {
@@ -2208,12 +2538,15 @@ var _examplesDbTemplatesMongodbPersistentTemplateJson = []byte(`{
       "description": "Volume space available for data, e.g. 512Mi, 2Gi.",
       "value": "1Gi",
       "required": true
+    },
+    {
+      "name": "MONGODB_VERSION",
+      "displayName": "Version of MongoDB Image",
+      "description": "Version of MongoDB image to be used (2.4, 2.6, 3.2 or latest).",
+      "value": "3.2",
+      "required": true
     }
-  ],
-  "labels": {
-    "template": "mongodb-persistent-template"
-  },
-  "message": "You can connect to the database using MongoDB connection URL mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${DATABASE_SERVICE_NAME}/${MONGODB_DATABASE}"
+  ]
 }
 `)
 
@@ -2238,12 +2571,29 @@ var _examplesDbTemplatesMysqlEphemeralTemplateJson = []byte(`{
   "metadata": {
     "name": "mysql-ephemeral",
     "annotations": {
-      "description": "MySQL database service, without persistent storage. WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
+      "openshift.io/display-name": "MySQL (Ephemeral)",
+      "description": "MySQL database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mysql-container/blob/master/5.6/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
       "iconClass": "icon-mysql-database",
       "tags": "database,mysql"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${MYSQL_USER}\n       Password: ${MYSQL_PASSWORD}\n  Database Name: ${MYSQL_DATABASE}\n Connection URL: mysql://${DATABASE_SERVICE_NAME}:3306/\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mysql-container/blob/master/5.6/README.md.",
+  "labels": {
+    "template": "mysql-ephemeral-template"
+  },
   "objects": [
+   {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${MYSQL_USER}",
+        "databasePassword" : "${MYSQL_PASSWORD}",
+        "databaseRootPassword" : "${MYSQL_ROOT_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -2292,7 +2642,7 @@ var _examplesDbTemplatesMysqlEphemeralTemplateJson = []byte(`{
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "mysql:5.6",
+                "name": "mysql:${MYSQL_VERSION}",
                 "namespace": "${NAMESPACE}"
               },
               "lastTriggeredImage": ""
@@ -2342,11 +2692,30 @@ var _examplesDbTemplatesMysqlEphemeralTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "MYSQL_USER",
-                    "value": "${MYSQL_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_PASSWORD",
-                    "value": "${MYSQL_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseRootPassword"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_DATABASE",
@@ -2426,16 +2795,28 @@ var _examplesDbTemplatesMysqlEphemeralTemplateJson = []byte(`{
       "required": true
     },
     {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "displayName": "MySQL root user Password",
+      "description": "Password for the MySQL root user.",
+      "generate": "expression",
+      "from": "[a-zA-Z0-9]{16}",
+      "required": true
+    },
+    {
       "name": "MYSQL_DATABASE",
       "displayName": "MySQL Database Name",
       "description": "Name of the MySQL database accessed.",
       "value": "sampledb",
       "required": true
+    },
+    {
+      "name": "MYSQL_VERSION",
+      "displayName": "Version of MySQL Image",
+      "description": "Version of MySQL image to be used (5.5, 5.6 or latest).",
+      "value": "5.6",
+      "required": true
     }
-  ],
-  "labels": {
-    "template": "mysql-ephemeral-template"
-  }
+  ]
 }
 `)
 
@@ -2460,12 +2841,29 @@ var _examplesDbTemplatesMysqlPersistentTemplateJson = []byte(`{
   "metadata": {
     "name": "mysql-persistent",
     "annotations": {
-      "description": "MySQL database service, with persistent storage.  Scaling to more than one replica is not supported.  You must have persistent volumes available in your cluster to use this template.",
+      "openshift.io/display-name": "MySQL (Persistent)",
+      "description": "MySQL database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mysql-container/blob/master/5.6/README.md.\n\nNOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster to use this template.",
       "iconClass": "icon-mysql-database",
       "tags": "database,mysql"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${MYSQL_USER}\n       Password: ${MYSQL_PASSWORD}\n  Database Name: ${MYSQL_DATABASE}\n Connection URL: mysql://${DATABASE_SERVICE_NAME}:3306/\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mysql-container/blob/master/5.6/README.md.",
+  "labels": {
+    "template": "mysql-persistent-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${MYSQL_USER}",
+        "databasePassword" : "${MYSQL_PASSWORD}",
+        "databaseRootPassword" : "${MYSQL_ROOT_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -2521,7 +2919,7 @@ var _examplesDbTemplatesMysqlPersistentTemplateJson = []byte(`{
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "mysql:5.6",
+                "name": "mysql:${MYSQL_VERSION}",
                 "namespace": "${NAMESPACE}"
               }
             }
@@ -2568,11 +2966,30 @@ var _examplesDbTemplatesMysqlPersistentTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "MYSQL_USER",
-                    "value": "${MYSQL_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_PASSWORD",
-                    "value": "${MYSQL_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseRootPassword"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_DATABASE",
@@ -2644,6 +3061,14 @@ var _examplesDbTemplatesMysqlPersistentTemplateJson = []byte(`{
       "required": true
     },
     {
+      "name": "MYSQL_ROOT_PASSWORD",
+      "displayName": "MySQL root user Password",
+      "description": "Password for the MySQL root user.",
+      "generate": "expression",
+      "from": "[a-zA-Z0-9]{16}",
+      "required": true
+    },
+    {
       "name": "MYSQL_DATABASE",
       "displayName": "MySQL Database Name",
       "description": "Name of the MySQL database accessed.",
@@ -2656,11 +3081,15 @@ var _examplesDbTemplatesMysqlPersistentTemplateJson = []byte(`{
       "description": "Volume space available for data, e.g. 512Mi, 2Gi.",
       "value": "1Gi",
       "required": true
+    },
+    {
+      "name": "MYSQL_VERSION",
+      "displayName": "Version of MySQL Image",
+      "description": "Version of MySQL image to be used (5.5, 5.6 or latest).",
+      "value": "5.6",
+      "required": true
     }
-  ],
-  "labels": {
-    "template": "mysql-persistent-template"
-  }
+  ]
 }
 `)
 
@@ -2686,12 +3115,28 @@ var _examplesDbTemplatesPostgresqlEphemeralTemplateJson = []byte(`{
     "name": "postgresql-ephemeral",
     "creationTimestamp": null,
     "annotations": {
-      "description": "PostgreSQL database service, without persistent storage. WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
+      "openshift.io/display-name": "PostgreSQL (Ephemeral)",
+      "description": "PostgreSQL database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/blob/master/9.5.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
       "iconClass": "icon-postgresql",
       "tags": "database,postgresql"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${POSTGRESQL_USER}\n       Password: ${POSTGRESQL_PASSWORD}\n  Database Name: ${POSTGRESQL_DATABASE}\n Connection URL: mysql://${DATABASE_SERVICE_NAME}:5432/\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/blob/master/9.5.",
+  "labels": {
+    "template": "postgresql-ephemeral-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${POSTGRESQL_USER}",
+        "databasePassword" : "${POSTGRESQL_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -2740,7 +3185,7 @@ var _examplesDbTemplatesPostgresqlEphemeralTemplateJson = []byte(`{
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "postgresql:9.5",
+                "name": "postgresql:${POSTGRESQL_VERSION}",
                 "namespace": "${NAMESPACE}"
               },
               "lastTriggeredImage": ""
@@ -2789,11 +3234,21 @@ var _examplesDbTemplatesPostgresqlEphemeralTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "POSTGRESQL_USER",
-                    "value": "${POSTGRESQL_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_PASSWORD",
-                    "value": "${POSTGRESQL_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_DATABASE",
@@ -2878,11 +3333,15 @@ var _examplesDbTemplatesPostgresqlEphemeralTemplateJson = []byte(`{
       "description": "Name of the PostgreSQL database accessed.",
       "value": "sampledb",
       "required": true
+    },
+    {
+      "name": "POSTGRESQL_VERSION",
+      "displayName": "Version of PostgreSQL Image",
+      "description": "Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).",
+      "value": "9.5",
+      "required": true
     }
-  ],
-  "labels": {
-    "template": "postgresql-ephemeral-template"
-  }
+  ]
 }
 `)
 
@@ -2908,12 +3367,28 @@ var _examplesDbTemplatesPostgresqlPersistentTemplateJson = []byte(`{
     "name": "postgresql-persistent",
     "creationTimestamp": null,
     "annotations": {
-      "description": "PostgreSQL database service, with persistent storage.  Scaling to more than one replica is not supported.  You must have persistent volumes available in your cluster to use this template.",
+      "openshift.io/display-name": "PostgreSQL (Persistent)",
+      "description": "PostgreSQL database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/blob/master/9.5.\n\nNOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster to use this template.",
       "iconClass": "icon-postgresql",
       "tags": "database,postgresql"
     }
   },
+  "message": "The following service(s) have been created in your project: ${DATABASE_SERVICE_NAME}.\n\n       Username: ${POSTGRESQL_USER}\n       Password: ${POSTGRESQL_PASSWORD}\n  Database Name: ${POSTGRESQL_DATABASE}\n Connection URL: mysql://${DATABASE_SERVICE_NAME}:5432/\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/blob/master/9.5.",
+  "labels": {
+    "template": "postgresql-persistent-template"
+  },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${POSTGRESQL_USER}",
+        "databasePassword" : "${POSTGRESQL_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
@@ -2979,7 +3454,7 @@ var _examplesDbTemplatesPostgresqlPersistentTemplateJson = []byte(`{
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "postgresql:9.5",
+                "name": "postgresql:${POSTGRESQL_VERSION}",
                 "namespace": "${NAMESPACE}"
               },
               "lastTriggeredImage": ""
@@ -3028,11 +3503,21 @@ var _examplesDbTemplatesPostgresqlPersistentTemplateJson = []byte(`{
                 "env": [
                   {
                     "name": "POSTGRESQL_USER",
-                    "value": "${POSTGRESQL_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_PASSWORD",
-                    "value": "${POSTGRESQL_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${DATABASE_SERVICE_NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_DATABASE",
@@ -3124,11 +3609,15 @@ var _examplesDbTemplatesPostgresqlPersistentTemplateJson = []byte(`{
       "description": "Volume space available for data, e.g. 512Mi, 2Gi.",
       "value": "1Gi",
       "required": true
+    },
+    {
+      "name": "POSTGRESQL_VERSION",
+      "displayName": "Version of PostgreSQL Image",
+      "description": "Version of PostgreSQL image to be used (9.2, 9.4, 9.5 or latest).",
+      "value": "9.5",
+      "required": true
     }
-  ],
-  "labels": {
-    "template": "postgresql-persistent-template"
-  }
+  ]
 }
 `)
 
@@ -3154,12 +3643,13 @@ var _examplesJenkinsJenkinsEphemeralTemplateJson = []byte(`{
     "name": "jenkins-ephemeral",
     "creationTimestamp": null,
     "annotations": {
-      "description": "Jenkins service, without persistent storage.\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing",
+      "openshift.io/display-name": "Jenkins (Ephemeral)",
+      "description": "Jenkins service, without persistent storage.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
       "iconClass": "icon-jenkins",
       "tags": "instant-app,jenkins"
     }
   },
-  "message": "A Jenkins service has been created in your project.  The username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/openshift/origin/blob/master/examples/jenkins/README.md contains more information about using this template.",
+  "message": "A Jenkins service has been created in your project.  Log into Jenkins with your OpenShift account.  The tutorial at https://github.com/openshift/origin/blob/master/examples/jenkins/README.md contains more information about using this template.",
   "objects": [
     {
       "kind": "Route",
@@ -3175,10 +3665,7 @@ var _examplesJenkinsJenkinsEphemeralTemplateJson = []byte(`{
         },
         "tls": {
           "termination": "edge",
-          "insecureEdgeTerminationPolicy": "Redirect",
-          "certificate": "-----BEGIN CERTIFICATE-----\nMIIDIjCCAgqgAwIBAgIBATANBgkqhkiG9w0BAQUFADCBoTELMAkGA1UEBhMCVVMx\nCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0Rl\nZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0ExGjAYBgNVBAMMEXd3\ndy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFtcGxlQGV4YW1wbGUu\nY29tMB4XDTE1MDExMjE0MTk0MVoXDTE2MDExMjE0MTk0MVowfDEYMBYGA1UEAwwP\nd3d3LmV4YW1wbGUuY29tMQswCQYDVQQIDAJTQzELMAkGA1UEBhMCVVMxIjAgBgkq\nhkiG9w0BCQEWE2V4YW1wbGVAZXhhbXBsZS5jb20xEDAOBgNVBAoMB0V4YW1wbGUx\nEDAOBgNVBAsMB0V4YW1wbGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMrv\ngu6ZTTefNN7jjiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm\n47VRx5Qrf/YLXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1M\nmNrQUgZyQC6XIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAGjDTALMAkGA1UdEwQC\nMAAwDQYJKoZIhvcNAQEFBQADggEBAFCi7ZlkMnESvzlZCvv82Pq6S46AAOTPXdFd\nTMvrh12E1sdVALF1P1oYFJzG1EiZ5ezOx88fEDTW+Lxb9anw5/KJzwtWcfsupf1m\nV7J0D3qKzw5C1wjzYHh9/Pz7B1D0KthQRATQCfNf8s6bbFLaw/dmiIUhHLtIH5Qc\nyfrejTZbOSP77z8NOWir+BWWgIDDB2//3AkDIQvT20vmkZRhkqSdT7et4NmXOX/j\njhPti4b2Fie0LeuvgaOdKjCpQQNrYthZHXeVlOLRhMTSk3qUczenkKTOhvP7IS9q\n+Dzv5hqgSfvMG392KWh5f8xXfJNs4W5KLbZyl901MeReiLrPH3w=\n-----END CERTIFICATE-----",
-          "key": "-----BEGIN PRIVATE KEY-----\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMrvgu6ZTTefNN7j\njiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm47VRx5Qrf/YL\nXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1MmNrQUgZyQC6X\nIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAECgYEAnxOjEj/vrLNLMZE1Q9H7PZVF\nWdP/JQVNvQ7tCpZ3ZdjxHwkvf//aQnuxS5yX2Rnf37BS/TZu+TIkK4373CfHomSx\nUTAn2FsLmOJljupgGcoeLx5K5nu7B7rY5L1NHvdpxZ4YjeISrRtEPvRakllENU5y\ngJE8c2eQOx08ZSRE4TkCQQD7dws2/FldqwdjJucYijsJVuUdoTqxP8gWL6bB251q\nelP2/a6W2elqOcWId28560jG9ZS3cuKvnmu/4LG88vZFAkEAzphrH3673oTsHN+d\nuBd5uyrlnGjWjuiMKv2TPITZcWBjB8nJDSvLneHF59MYwejNNEof2tRjgFSdImFH\nmi995wJBAMtPjW6wiqRz0i41VuT9ZgwACJBzOdvzQJfHgSD9qgFb1CU/J/hpSRIM\nkYvrXK9MbvQFvG6x4VuyT1W8mpe1LK0CQAo8VPpffhFdRpF7psXLK/XQ/0VLkG3O\nKburipLyBg/u9ZkaL0Ley5zL5dFBjTV2Qkx367Ic2b0u9AYTCcgi2DsCQQD3zZ7B\nv7BOm7MkylKokY2MduFFXU0Bxg6pfZ7q3rvg8gqhUFbaMStPRYg6myiDiW/JfLhF\nTcFT4touIo7oriFJ\n-----END PRIVATE KEY-----",
-          "caCertificate": "-----BEGIN CERTIFICATE-----\nMIIEFzCCAv+gAwIBAgIJALK1iUpF2VQLMA0GCSqGSIb3DQEBBQUAMIGhMQswCQYD\nVQQGEwJVUzELMAkGA1UECAwCU0MxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoG\nA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDEQMA4GA1UECwwHVGVzdCBDQTEaMBgG\nA1UEAwwRd3d3LmV4YW1wbGVjYS5jb20xIjAgBgkqhkiG9w0BCQEWE2V4YW1wbGVA\nZXhhbXBsZS5jb20wHhcNMTUwMTEyMTQxNTAxWhcNMjUwMTA5MTQxNTAxWjCBoTEL\nMAkGA1UEBhMCVVMxCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkx\nHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0Ex\nGjAYBgNVBAMMEXd3dy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFt\ncGxlQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\nw2rK1J2NMtQj0KDug7g7HRKl5jbf0QMkMKyTU1fBtZ0cCzvsF4CqV11LK4BSVWaK\nrzkaXe99IVJnH8KdOlDl5Dh/+cJ3xdkClSyeUT4zgb6CCBqg78ePp+nN11JKuJlV\nIG1qdJpB1J5O/kCLsGcTf7RS74MtqMFo96446Zvt7YaBhWPz6gDaO/TUzfrNcGLA\nEfHVXkvVWqb3gqXUztZyVex/gtP9FXQ7gxTvJml7UkmT0VAFjtZnCqmFxpLZFZ15\n+qP9O7Q2MpsGUO/4vDAuYrKBeg1ZdPSi8gwqUP2qWsGd9MIWRv3thI2903BczDc7\nr8WaIbm37vYZAS9G56E4+wIDAQABo1AwTjAdBgNVHQ4EFgQUugLrSJshOBk5TSsU\nANs4+SmJUGwwHwYDVR0jBBgwFoAUugLrSJshOBk5TSsUANs4+SmJUGwwDAYDVR0T\nBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEAaMJ33zAMV4korHo5aPfayV3uHoYZ\n1ChzP3eSsF+FjoscpoNSKs91ZXZF6LquzoNezbfiihK4PYqgwVD2+O0/Ty7UjN4S\nqzFKVR4OS/6lCJ8YncxoFpTntbvjgojf1DEataKFUN196PAANc3yz8cWHF4uvjPv\nWkgFqbIjb+7D1YgglNyovXkRDlRZl0LD1OQ0ZWhd4Ge1qx8mmmanoBeYZ9+DgpFC\nj9tQAbS867yeOryNe7sEOIpXAAqK/DTu0hB6+ySsDfMo4piXCc2aA/eI2DCuw08e\nw17Dz9WnupZjVdwTKzDhFgJZMLDqn37HQnT6EemLFqbcR0VPEnfyhDtZIQ==\n-----END CERTIFICATE-----"
+          "insecureEdgeTerminationPolicy": "Redirect"
         }
       }
     },
@@ -3240,7 +3727,8 @@ var _examplesJenkinsJenkinsEphemeralTemplateJson = []byte(`{
                 },
                 "livenessProbe": {
                     "timeoutSeconds": 3,
-                    "initialDelaySeconds": 120,
+                    "initialDelaySeconds": 420,
+                    "failureThreshold" : 30,
                     "httpGet": {
                         "path": "/login",
                         "port": 8080
@@ -3248,8 +3736,12 @@ var _examplesJenkinsJenkinsEphemeralTemplateJson = []byte(`{
                 },
                 "env": [
                   {
-                    "name": "JENKINS_PASSWORD",
-                    "value": "${JENKINS_PASSWORD}"
+                    "name": "OPENSHIFT_ENABLE_OAUTH",
+                    "value": "${ENABLE_OAUTH}"
+                  },
+                  {
+                    "name": "OPENSHIFT_ENABLE_REDIRECT_PROMPT",
+                    "value": "true"
                   },
                   {
                     "name": "KUBERNETES_MASTER",
@@ -3302,7 +3794,10 @@ var _examplesJenkinsJenkinsEphemeralTemplateJson = []byte(`{
       "kind": "ServiceAccount",
         "apiVersion": "v1",
         "metadata": {
-            "name": "${JENKINS_SERVICE_NAME}"
+            "name": "${JENKINS_SERVICE_NAME}",
+            "annotations": {
+		"serviceaccounts.openshift.io/oauth-redirectreference.jenkins": "{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"${JENKINS_SERVICE_NAME}\"}}"
+            }
         }
     },
     {
@@ -3388,12 +3883,10 @@ var _examplesJenkinsJenkinsEphemeralTemplateJson = []byte(`{
       "value": "jenkins-jnlp"
     },
     {
-      "name": "JENKINS_PASSWORD",
-      "displayName": "Jenkins Password",
-      "description": "Password for the Jenkins 'admin' user.",
-      "generate": "expression",
-      "from": "[a-zA-Z0-9]{16}",
-      "required": true
+      "name": "ENABLE_OAUTH",
+      "displayName": "Enable OAuth in Jenkins",
+      "description": "Whether to enable OAuth OpenShift integration. If false, the static account 'admin' will be initialized with the password 'password'.",
+      "value": "true"
     },
     {
       "name": "MEMORY_LIMIT",
@@ -3442,12 +3935,13 @@ var _examplesJenkinsJenkinsPersistentTemplateJson = []byte(`{
     "name": "jenkins-persistent",
     "creationTimestamp": null,
     "annotations": {
-      "description": "Jenkins service, with persistent storage.\nYou must have persistent volumes available in your cluster to use this template.",
+      "openshift.io/display-name": "Jenkins (Persistent)",
+      "description": "Jenkins service, with persistent storage.\n\nNOTE: You must have persistent volumes available in your cluster to use this template.",
       "iconClass": "icon-jenkins",
       "tags": "instant-app,jenkins"
     }
   },
-  "message": "A Jenkins service has been created in your project.  The username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/openshift/origin/blob/master/examples/jenkins/README.md contains more information about using this template.",
+  "message": "A Jenkins service has been created in your project.  Log into Jenkins with your OpenShift account.  The tutorial at https://github.com/openshift/origin/blob/master/examples/jenkins/README.md contains more information about using this template.",
   "objects": [
     {
       "kind": "Route",
@@ -3463,10 +3957,7 @@ var _examplesJenkinsJenkinsPersistentTemplateJson = []byte(`{
         },
         "tls": {
           "termination": "edge",
-          "insecureEdgeTerminationPolicy": "Redirect",
-          "certificate": "-----BEGIN CERTIFICATE-----\nMIIDIjCCAgqgAwIBAgIBATANBgkqhkiG9w0BAQUFADCBoTELMAkGA1UEBhMCVVMx\nCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0Rl\nZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0ExGjAYBgNVBAMMEXd3\ndy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFtcGxlQGV4YW1wbGUu\nY29tMB4XDTE1MDExMjE0MTk0MVoXDTE2MDExMjE0MTk0MVowfDEYMBYGA1UEAwwP\nd3d3LmV4YW1wbGUuY29tMQswCQYDVQQIDAJTQzELMAkGA1UEBhMCVVMxIjAgBgkq\nhkiG9w0BCQEWE2V4YW1wbGVAZXhhbXBsZS5jb20xEDAOBgNVBAoMB0V4YW1wbGUx\nEDAOBgNVBAsMB0V4YW1wbGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMrv\ngu6ZTTefNN7jjiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm\n47VRx5Qrf/YLXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1M\nmNrQUgZyQC6XIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAGjDTALMAkGA1UdEwQC\nMAAwDQYJKoZIhvcNAQEFBQADggEBAFCi7ZlkMnESvzlZCvv82Pq6S46AAOTPXdFd\nTMvrh12E1sdVALF1P1oYFJzG1EiZ5ezOx88fEDTW+Lxb9anw5/KJzwtWcfsupf1m\nV7J0D3qKzw5C1wjzYHh9/Pz7B1D0KthQRATQCfNf8s6bbFLaw/dmiIUhHLtIH5Qc\nyfrejTZbOSP77z8NOWir+BWWgIDDB2//3AkDIQvT20vmkZRhkqSdT7et4NmXOX/j\njhPti4b2Fie0LeuvgaOdKjCpQQNrYthZHXeVlOLRhMTSk3qUczenkKTOhvP7IS9q\n+Dzv5hqgSfvMG392KWh5f8xXfJNs4W5KLbZyl901MeReiLrPH3w=\n-----END CERTIFICATE-----",
-          "key": "-----BEGIN PRIVATE KEY-----\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMrvgu6ZTTefNN7j\njiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm47VRx5Qrf/YL\nXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1MmNrQUgZyQC6X\nIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAECgYEAnxOjEj/vrLNLMZE1Q9H7PZVF\nWdP/JQVNvQ7tCpZ3ZdjxHwkvf//aQnuxS5yX2Rnf37BS/TZu+TIkK4373CfHomSx\nUTAn2FsLmOJljupgGcoeLx5K5nu7B7rY5L1NHvdpxZ4YjeISrRtEPvRakllENU5y\ngJE8c2eQOx08ZSRE4TkCQQD7dws2/FldqwdjJucYijsJVuUdoTqxP8gWL6bB251q\nelP2/a6W2elqOcWId28560jG9ZS3cuKvnmu/4LG88vZFAkEAzphrH3673oTsHN+d\nuBd5uyrlnGjWjuiMKv2TPITZcWBjB8nJDSvLneHF59MYwejNNEof2tRjgFSdImFH\nmi995wJBAMtPjW6wiqRz0i41VuT9ZgwACJBzOdvzQJfHgSD9qgFb1CU/J/hpSRIM\nkYvrXK9MbvQFvG6x4VuyT1W8mpe1LK0CQAo8VPpffhFdRpF7psXLK/XQ/0VLkG3O\nKburipLyBg/u9ZkaL0Ley5zL5dFBjTV2Qkx367Ic2b0u9AYTCcgi2DsCQQD3zZ7B\nv7BOm7MkylKokY2MduFFXU0Bxg6pfZ7q3rvg8gqhUFbaMStPRYg6myiDiW/JfLhF\nTcFT4touIo7oriFJ\n-----END PRIVATE KEY-----",
-          "caCertificate": "-----BEGIN CERTIFICATE-----\nMIIEFzCCAv+gAwIBAgIJALK1iUpF2VQLMA0GCSqGSIb3DQEBBQUAMIGhMQswCQYD\nVQQGEwJVUzELMAkGA1UECAwCU0MxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoG\nA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDEQMA4GA1UECwwHVGVzdCBDQTEaMBgG\nA1UEAwwRd3d3LmV4YW1wbGVjYS5jb20xIjAgBgkqhkiG9w0BCQEWE2V4YW1wbGVA\nZXhhbXBsZS5jb20wHhcNMTUwMTEyMTQxNTAxWhcNMjUwMTA5MTQxNTAxWjCBoTEL\nMAkGA1UEBhMCVVMxCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkx\nHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0Ex\nGjAYBgNVBAMMEXd3dy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFt\ncGxlQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\nw2rK1J2NMtQj0KDug7g7HRKl5jbf0QMkMKyTU1fBtZ0cCzvsF4CqV11LK4BSVWaK\nrzkaXe99IVJnH8KdOlDl5Dh/+cJ3xdkClSyeUT4zgb6CCBqg78ePp+nN11JKuJlV\nIG1qdJpB1J5O/kCLsGcTf7RS74MtqMFo96446Zvt7YaBhWPz6gDaO/TUzfrNcGLA\nEfHVXkvVWqb3gqXUztZyVex/gtP9FXQ7gxTvJml7UkmT0VAFjtZnCqmFxpLZFZ15\n+qP9O7Q2MpsGUO/4vDAuYrKBeg1ZdPSi8gwqUP2qWsGd9MIWRv3thI2903BczDc7\nr8WaIbm37vYZAS9G56E4+wIDAQABo1AwTjAdBgNVHQ4EFgQUugLrSJshOBk5TSsU\nANs4+SmJUGwwHwYDVR0jBBgwFoAUugLrSJshOBk5TSsUANs4+SmJUGwwDAYDVR0T\nBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEAaMJ33zAMV4korHo5aPfayV3uHoYZ\n1ChzP3eSsF+FjoscpoNSKs91ZXZF6LquzoNezbfiihK4PYqgwVD2+O0/Ty7UjN4S\nqzFKVR4OS/6lCJ8YncxoFpTntbvjgojf1DEataKFUN196PAANc3yz8cWHF4uvjPv\nWkgFqbIjb+7D1YgglNyovXkRDlRZl0LD1OQ0ZWhd4Ge1qx8mmmanoBeYZ9+DgpFC\nj9tQAbS867yeOryNe7sEOIpXAAqK/DTu0hB6+ySsDfMo4piXCc2aA/eI2DCuw08e\nw17Dz9WnupZjVdwTKzDhFgJZMLDqn37HQnT6EemLFqbcR0VPEnfyhDtZIQ==\n-----END CERTIFICATE-----"
+          "insecureEdgeTerminationPolicy": "Redirect"
         }
       }
     },
@@ -3545,7 +4036,8 @@ var _examplesJenkinsJenkinsPersistentTemplateJson = []byte(`{
                 },
                 "livenessProbe": {
                     "timeoutSeconds": 3,
-                    "initialDelaySeconds": 120,
+                    "initialDelaySeconds": 420,
+                    "failureThreshold" : 30,
                     "httpGet": {
                         "path": "/login",
                         "port": 8080
@@ -3553,8 +4045,12 @@ var _examplesJenkinsJenkinsPersistentTemplateJson = []byte(`{
                 },
                 "env": [
                   {
-                    "name": "JENKINS_PASSWORD",
-                    "value": "${JENKINS_PASSWORD}"
+                    "name": "OPENSHIFT_ENABLE_OAUTH",
+                    "value": "${ENABLE_OAUTH}"
+                  },
+                  {
+                    "name": "OPENSHIFT_ENABLE_REDIRECT_PROMPT",
+                    "value": "true"
                   },
                   {
                     "name": "KUBERNETES_MASTER",
@@ -3607,7 +4103,10 @@ var _examplesJenkinsJenkinsPersistentTemplateJson = []byte(`{
       "kind": "ServiceAccount",
         "apiVersion": "v1",
         "metadata": {
-            "name": "${JENKINS_SERVICE_NAME}"
+            "name": "${JENKINS_SERVICE_NAME}",
+            "annotations": {
+		"serviceaccounts.openshift.io/oauth-redirectreference.jenkins": "{\"kind\":\"OAuthRedirectReference\",\"apiVersion\":\"v1\",\"reference\":{\"kind\":\"Route\",\"name\":\"${JENKINS_SERVICE_NAME}\"}}"
+            }
         }
     },
     {
@@ -3693,12 +4192,10 @@ var _examplesJenkinsJenkinsPersistentTemplateJson = []byte(`{
       "value": "jenkins-jnlp"
     },
     {
-      "name": "JENKINS_PASSWORD",
-      "displayName": "Jenkins Password",
-      "description": "Password for the Jenkins 'admin' user.",
-      "generate": "expression",
-      "from": "[a-zA-Z0-9]{16}",
-      "required": true
+      "name": "ENABLE_OAUTH",
+      "displayName": "Enable OAuth in Jenkins",
+      "description": "Whether to enable OAuth OpenShift integration. If false, the static account 'admin' will be initialized with the password 'password'.",
+      "value": "true"
     },
     {
       "name": "MEMORY_LIMIT",
@@ -3747,529 +4244,1181 @@ func examplesJenkinsJenkinsPersistentTemplateJson() (*asset, error) {
 	return a, nil
 }
 
-var _examplesJenkinsPipelineSamplepipelineJson = []byte(`{
-  "kind": "Template",
-  "apiVersion": "v1",
-  "metadata": {
-    "name": "jenkins-pipeline-example",
-    "creationTimestamp": null,
-    "annotations": {
-      "description": "This example showcases the new Jenkins Pipeline integration in OpenShift, which performs continuous integration and deployment right on the platform. The template contains a Jenkinsfile - a definition of a multi-stage CI process - that leverages the underlying OpenShift platform for dynamic and scalable builds. OpenShift integrates the status of your pipeline builds into the web console allowing you to see your entire application lifecycle in a single view.",
-      "iconClass": "icon-jenkins",
-      "tags": "instant-app,ruby,mysql,jenkins"
-    }
-  },
-  "message": "The Jenkins server is not currently automatically instantiated for you.  Please instantiate one of the Jenkins templates to create a Jenkins server for managing your pipeline build configurations.",
-  "objects": [
-    {
-      "kind": "BuildConfig",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "sample-pipeline",
-        "creationTimestamp": null,
-        "labels": {
-          "name": "sample-pipeline"
-        },
-        "annotations": {
-          "pipeline.alpha.openshift.io/uses": "[{\"name\": \"frontend\", \"namespace\": \"\", \"kind\": \"DeploymentConfig\"}]"
-        }
-      },
-      "spec": {
-        "triggers": [
-          {
-            "type": "GitHub",
-            "github": {
-              "secret": "secret101"
+var _examplesJenkinsPipelineBluegreenPipelineYaml = []byte(`apiVersion: v1
+kind: Template
+labels:
+  template: bluegreen-pipeline
+message: A Jenkins server will be automatically instantiated in this project to manage
+  the Pipeline BuildConfig created by this template.  You will be able to log in to
+  it using your OpenShift user credentials.
+metadata:
+  annotations:
+    description: This example showcases a blue green deployment using a Jenkins 
+      pipeline that pauses for approval.
+    iconClass: icon-jenkins
+    tags: instant-app,jenkins
+  name: bluegreen-pipeline
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "${NAME}", "namespace": "", "kind": "DeploymentConfig"}]'
+    creationTimestamp: null
+    labels:
+      name: bluegreen-pipeline
+    name: bluegreen-pipeline
+  spec:
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          def appName="${NAME}"
+          def project=""
+          def tag="blue"
+          def altTag="green"
+
+          node {
+            project = env.PROJECT_NAME
+            stage("Initialize") {
+              sh "oc get route ${appName} -n ${project} -o jsonpath='{ .spec.to.weight }' > blueweight"
+              blueWeight = readFile('blueweight').trim()
+              if (blueWeight == "100") {
+                tag = "green"
+                altTag = "blue"
+              }
+              sh "oc get route ${tag}-${appName} -n ${project} -o jsonpath='{ .spec.host }' > routehost"
+              routeHost = readFile('routehost').trim()
             }
-          },
-          {
-            "type": "Generic",
-            "generic": {
-              "secret": "secret101"
+
+            stage("Build") {
+              echo "building tag ${tag}"
+              openshiftBuild buildConfig: appName, showBuildLogs: "true"
             }
-          }
-        ],
-        "strategy": {
-          "type": "JenkinsPipeline",
-          "jenkinsPipelineStrategy": {
-            "jenkinsfile": "node('maven') {\nstage 'build'\nopenshiftBuild(buildConfig: 'ruby-sample-build', showBuildLogs: 'true')\nstage 'deploy'\nopenshiftDeploy(deploymentConfig: 'frontend')\n}"
-          }
-        }
-      }
-    },
-    {
-      "kind": "Service",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "frontend",
-        "creationTimestamp": null,
-        "annotations": {
-          "service.alpha.openshift.io/dependencies": "[{\"name\": \"database\", \"namespace\": \"\", \"kind\": \"Service\"}]"
-        }
-      },
-      "spec": {
-        "ports": [
-          {
-            "name": "web",
-            "protocol": "TCP",
-            "port": 5432,
-            "targetPort": 8080,
-            "nodePort": 0
-          }
-        ],
-        "selector": {
-          "name": "frontend"
-        },
-        "type": "ClusterIP",
-        "sessionAffinity": "None"
-      },
-      "status": {
-        "loadBalancer": {}
-      }
-    },
-    {
-      "kind": "Route",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "frontend",
-        "creationTimestamp": null
-      },
-      "spec": {
-        "to": {
-          "kind": "Service",
-          "name": "frontend"
-        },
-        "tls": {
-          "termination": "edge",
-          "certificate": "-----BEGIN CERTIFICATE-----\nMIIDIjCCAgqgAwIBAgIBATANBgkqhkiG9w0BAQUFADCBoTELMAkGA1UEBhMCVVMx\nCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0Rl\nZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0ExGjAYBgNVBAMMEXd3\ndy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFtcGxlQGV4YW1wbGUu\nY29tMB4XDTE1MDExMjE0MTk0MVoXDTE2MDExMjE0MTk0MVowfDEYMBYGA1UEAwwP\nd3d3LmV4YW1wbGUuY29tMQswCQYDVQQIDAJTQzELMAkGA1UEBhMCVVMxIjAgBgkq\nhkiG9w0BCQEWE2V4YW1wbGVAZXhhbXBsZS5jb20xEDAOBgNVBAoMB0V4YW1wbGUx\nEDAOBgNVBAsMB0V4YW1wbGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMrv\ngu6ZTTefNN7jjiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm\n47VRx5Qrf/YLXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1M\nmNrQUgZyQC6XIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAGjDTALMAkGA1UdEwQC\nMAAwDQYJKoZIhvcNAQEFBQADggEBAFCi7ZlkMnESvzlZCvv82Pq6S46AAOTPXdFd\nTMvrh12E1sdVALF1P1oYFJzG1EiZ5ezOx88fEDTW+Lxb9anw5/KJzwtWcfsupf1m\nV7J0D3qKzw5C1wjzYHh9/Pz7B1D0KthQRATQCfNf8s6bbFLaw/dmiIUhHLtIH5Qc\nyfrejTZbOSP77z8NOWir+BWWgIDDB2//3AkDIQvT20vmkZRhkqSdT7et4NmXOX/j\njhPti4b2Fie0LeuvgaOdKjCpQQNrYthZHXeVlOLRhMTSk3qUczenkKTOhvP7IS9q\n+Dzv5hqgSfvMG392KWh5f8xXfJNs4W5KLbZyl901MeReiLrPH3w=\n-----END CERTIFICATE-----",
-          "key": "-----BEGIN PRIVATE KEY-----\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMrvgu6ZTTefNN7j\njiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm47VRx5Qrf/YL\nXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1MmNrQUgZyQC6X\nIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAECgYEAnxOjEj/vrLNLMZE1Q9H7PZVF\nWdP/JQVNvQ7tCpZ3ZdjxHwkvf//aQnuxS5yX2Rnf37BS/TZu+TIkK4373CfHomSx\nUTAn2FsLmOJljupgGcoeLx5K5nu7B7rY5L1NHvdpxZ4YjeISrRtEPvRakllENU5y\ngJE8c2eQOx08ZSRE4TkCQQD7dws2/FldqwdjJucYijsJVuUdoTqxP8gWL6bB251q\nelP2/a6W2elqOcWId28560jG9ZS3cuKvnmu/4LG88vZFAkEAzphrH3673oTsHN+d\nuBd5uyrlnGjWjuiMKv2TPITZcWBjB8nJDSvLneHF59MYwejNNEof2tRjgFSdImFH\nmi995wJBAMtPjW6wiqRz0i41VuT9ZgwACJBzOdvzQJfHgSD9qgFb1CU/J/hpSRIM\nkYvrXK9MbvQFvG6x4VuyT1W8mpe1LK0CQAo8VPpffhFdRpF7psXLK/XQ/0VLkG3O\nKburipLyBg/u9ZkaL0Ley5zL5dFBjTV2Qkx367Ic2b0u9AYTCcgi2DsCQQD3zZ7B\nv7BOm7MkylKokY2MduFFXU0Bxg6pfZ7q3rvg8gqhUFbaMStPRYg6myiDiW/JfLhF\nTcFT4touIo7oriFJ\n-----END PRIVATE KEY-----",
-          "caCertificate": "-----BEGIN CERTIFICATE-----\nMIIEFzCCAv+gAwIBAgIJALK1iUpF2VQLMA0GCSqGSIb3DQEBBQUAMIGhMQswCQYD\nVQQGEwJVUzELMAkGA1UECAwCU0MxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoG\nA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDEQMA4GA1UECwwHVGVzdCBDQTEaMBgG\nA1UEAwwRd3d3LmV4YW1wbGVjYS5jb20xIjAgBgkqhkiG9w0BCQEWE2V4YW1wbGVA\nZXhhbXBsZS5jb20wHhcNMTUwMTEyMTQxNTAxWhcNMjUwMTA5MTQxNTAxWjCBoTEL\nMAkGA1UEBhMCVVMxCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkx\nHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0Ex\nGjAYBgNVBAMMEXd3dy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFt\ncGxlQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\nw2rK1J2NMtQj0KDug7g7HRKl5jbf0QMkMKyTU1fBtZ0cCzvsF4CqV11LK4BSVWaK\nrzkaXe99IVJnH8KdOlDl5Dh/+cJ3xdkClSyeUT4zgb6CCBqg78ePp+nN11JKuJlV\nIG1qdJpB1J5O/kCLsGcTf7RS74MtqMFo96446Zvt7YaBhWPz6gDaO/TUzfrNcGLA\nEfHVXkvVWqb3gqXUztZyVex/gtP9FXQ7gxTvJml7UkmT0VAFjtZnCqmFxpLZFZ15\n+qP9O7Q2MpsGUO/4vDAuYrKBeg1ZdPSi8gwqUP2qWsGd9MIWRv3thI2903BczDc7\nr8WaIbm37vYZAS9G56E4+wIDAQABo1AwTjAdBgNVHQ4EFgQUugLrSJshOBk5TSsU\nANs4+SmJUGwwHwYDVR0jBBgwFoAUugLrSJshOBk5TSsUANs4+SmJUGwwDAYDVR0T\nBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEAaMJ33zAMV4korHo5aPfayV3uHoYZ\n1ChzP3eSsF+FjoscpoNSKs91ZXZF6LquzoNezbfiihK4PYqgwVD2+O0/Ty7UjN4S\nqzFKVR4OS/6lCJ8YncxoFpTntbvjgojf1DEataKFUN196PAANc3yz8cWHF4uvjPv\nWkgFqbIjb+7D1YgglNyovXkRDlRZl0LD1OQ0ZWhd4Ge1qx8mmmanoBeYZ9+DgpFC\nj9tQAbS867yeOryNe7sEOIpXAAqK/DTu0hB6+ySsDfMo4piXCc2aA/eI2DCuw08e\nw17Dz9WnupZjVdwTKzDhFgJZMLDqn37HQnT6EemLFqbcR0VPEnfyhDtZIQ==\n-----END CERTIFICATE-----"
-        }
-      },
-      "status": {}
-    },
-    {
-      "kind": "ImageStream",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "origin-ruby-sample",
-        "creationTimestamp": null
-      },
-      "spec": {},
-      "status": {
-        "dockerImageRepository": ""
-      }
-    },
-    {
-      "kind": "BuildConfig",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "ruby-sample-build",
-        "creationTimestamp": null,
-        "labels": {
-          "name": "ruby-sample-build"
-        }
-      },
-      "spec": {
-        "triggers": [
-          {
-            "type": "GitHub",
-            "github": {
-              "secret": "secret101"
+
+            stage("Deploy Test") {
+              openshiftTag srcStream: appName, srcTag: 'latest', destinationStream: appName, destinationTag: tag
+              openshiftVerifyDeployment deploymentConfig: "${appName}-${tag}"
             }
-          },
-          {
-            "type": "Generic",
-            "generic": {
-              "secret": "secret101"
+
+            stage("Test") {
+              input "Test deployment: http://${routeHost}. Approve?"
+            }
+
+            stage("Go Live") {
+              sh "oc set -n ${project} route-backends ${appName} ${appName}-${tag}=100 ${appName}-${altTag}=0"
             }
           }
-        ],
-        "source": {
-          "type": "Git",
-          "git": {
-            "uri": "https://github.com/openshift/ruby-hello-world.git"
-          }
-        },
-        "strategy": {
-          "type": "Source",
-          "sourceStrategy": {
-            "from": {
-              "kind": "ImageStreamTag",
-              "name": "ruby:2.2",
-              "namespace": "openshift"
-            },
-            "env": [
-              {
-                "name": "EXAMPLE",
-                "value": "sample-app"
-              }
-            ]
-          }
-        },
-        "output": {
-          "to": {
-            "kind": "ImageStreamTag",
-            "name": "origin-ruby-sample:latest"
-          }
-        },
-        "postCommit": {
-          "args": ["bundle", "exec", "rake", "test"]
-        },
-        "resources": {}
-      },
-      "status": {
-        "lastVersion": 0
-      }
-    },
-    {
-      "kind": "DeploymentConfig",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "frontend",
-        "creationTimestamp": null
-      },
-      "spec": {
-        "strategy": {
-          "type": "Rolling",
-          "rollingParams": {
-            "updatePeriodSeconds": 1,
-            "intervalSeconds": 1,
-            "timeoutSeconds": 120,
-            "pre": {
-              "failurePolicy": "Abort",
-              "execNewPod": {
-                "command": [
-                  "/bin/true"
-                ],
-                "env": [
-                  {
-                    "name": "CUSTOM_VAR1",
-                    "value": "custom_value1"
-                  }
-                ],
-                "containerName": "ruby-helloworld"
-              }
-            },
-            "post": {
-              "failurePolicy": "Ignore",
-              "execNewPod": {
-                "command": [
-                  "/bin/true"
-                ],
-                "env": [
-                  {
-                    "name": "CUSTOM_VAR2",
-                    "value": "custom_value2"
-                  }
-                ],
-                "containerName": "ruby-helloworld"
-              }
-            }
-          },
-          "resources": {}
-        },
-        "triggers": [
-          {
-            "type": "ImageChange",
-            "imageChangeParams": {
-              "automatic": true,
-              "containerNames": [
-                "ruby-helloworld"
-              ],
-              "from": {
-                "kind": "ImageStreamTag",
-                "name": "origin-ruby-sample:latest"
-              }
-            }
-          }
-        ],
-        "replicas": 2,
-        "selector": {
-          "name": "frontend"
-        },
-        "template": {
-          "metadata": {
-            "creationTimestamp": null,
-            "labels": {
-              "name": "frontend"
-            }
-          },
-          "spec": {
-            "containers": [
-              {
-                "name": "ruby-helloworld",
-                "image": " ",
-                "ports": [
-                  {
-                    "containerPort": 8080,
-                    "protocol": "TCP"
-                  }
-                ],
-                "env": [
-                  {
-                    "name": "ADMIN_USERNAME",
-                    "value": "${ADMIN_USERNAME}"
-                  },
-                  {
-                    "name": "ADMIN_PASSWORD",
-                    "value": "${ADMIN_PASSWORD}"
-                  },
-                  {
-                    "name": "MYSQL_USER",
-                    "value": "${MYSQL_USER}"
-                  },
-                  {
-                    "name": "MYSQL_PASSWORD",
-                    "value": "${MYSQL_PASSWORD}"
-                  },
-                  {
-                    "name": "MYSQL_DATABASE",
-                    "value": "${MYSQL_DATABASE}"
-                  }
-                ],
-                "resources": {},
-                "terminationMessagePath": "/dev/termination-log",
-                "imagePullPolicy": "IfNotPresent",
-                "securityContext": {
-                  "capabilities": {},
-                  "privileged": false
-                }
-              }
-            ],
-            "restartPolicy": "Always",
-            "dnsPolicy": "ClusterFirst"
-          }
-        }
-      },
-      "status": {}
-    },
-    {
-      "kind": "Service",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "database",
-        "creationTimestamp": null
-      },
-      "spec": {
-        "ports": [
-          {
-            "name": "db",
-            "protocol": "TCP",
-            "port": 5434,
-            "targetPort": 3306,
-            "nodePort": 0
-          }
-        ],
-        "selector": {
-          "name": "database"
-        },
-        "type": "ClusterIP",
-        "sessionAffinity": "None"
-      },
-      "status": {
-        "loadBalancer": {}
-      }
-    },
-    {
-      "kind": "DeploymentConfig",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "database",
-        "creationTimestamp": null
-      },
-      "spec": {
-        "strategy": {
-          "type": "Recreate",
-          "recreateParams": {
-            "pre": {
-              "failurePolicy": "Abort",
-              "execNewPod": {
-                "command": [
-                  "/bin/true"
-                ],
-                "env": [
-                  {
-                    "name": "CUSTOM_VAR1",
-                    "value": "custom_value1"
-                  }
-                ],
-                "containerName": "ruby-helloworld-database",
-                "volumes": ["ruby-helloworld-data"]
-              }
-            },
-            "mid": {
-              "failurePolicy": "Abort",
-              "execNewPod": {
-                "command": [
-                  "/bin/true"
-                ],
-                "env": [
-                  {
-                    "name": "CUSTOM_VAR2",
-                    "value": "custom_value2"
-                  }
-                ],
-                "containerName": "ruby-helloworld-database",
-                "volumes": ["ruby-helloworld-data"]
-              }
-            },
-            "post": {
-              "failurePolicy": "Ignore",
-              "execNewPod": {
-                "command": [
-                  "/bin/true"
-                ],
-                "env": [
-                  {
-                    "name": "CUSTOM_VAR2",
-                    "value": "custom_value2"
-                  }
-                ],
-                "containerName": "ruby-helloworld-database",
-                "volumes": ["ruby-helloworld-data"]
-              }
-            }
-          },
-          "resources": {}
-        },
-        "triggers": [
-          {
-            "type": "ImageChange",
-            "imageChangeParams": {
-              "automatic": true,
-              "containerNames": [
-                "ruby-helloworld-database"
-              ],
-              "from": {
-                "kind": "ImageStreamTag",
-                "name": "mysql:5.6",
-                "namespace": "openshift"
-              }
-            }
-          },
-          {
-            "type": "ConfigChange"
-          }
-        ],
-        "replicas": 1,
-        "selector": {
-          "name": "database"
-        },
-        "template": {
-          "metadata": {
-            "creationTimestamp": null,
-            "labels": {
-              "name": "database"
-            }
-          },
-          "spec": {
-            "containers": [
-              {
-                "name": "ruby-helloworld-database",
-                "image": " ",
-                "ports": [
-                  {
-                    "containerPort": 3306,
-                    "protocol": "TCP"
-                  }
-                ],
-                "env": [
-                  {
-                    "name": "MYSQL_USER",
-                    "value": "${MYSQL_USER}"
-                  },
-                  {
-                    "name": "MYSQL_PASSWORD",
-                    "value": "${MYSQL_PASSWORD}"
-                  },
-                  {
-                    "name": "MYSQL_DATABASE",
-                    "value": "${MYSQL_DATABASE}"
-                  }
-                ],
-                "resources": {},
-                "volumeMounts": [
-                  {
-                    "name": "ruby-helloworld-data",
-                    "mountPath": "/var/lib/mysql/data"
-                  }
-                ],
-                "terminationMessagePath": "/dev/termination-log",
-                "imagePullPolicy": "Always",
-                "securityContext": {
-                  "capabilities": {},
-                  "privileged": false
-                }
-              }
-            ],
-            "volumes": [
-              {
-                "name": "ruby-helloworld-data",
-                "emptyDir": {
-                  "medium": ""
-                }
-              }
-            ],
-            "restartPolicy": "Always",
-            "dnsPolicy": "ClusterFirst"
-          }
-        }
-      },
-      "status": {}
-    }
-  ],
-  "parameters": [
-    {
-      "name": "ADMIN_USERNAME",
-      "description": "administrator username",
-      "generate": "expression",
-      "from": "admin[A-Z0-9]{3}"
-    },
-    {
-      "name": "ADMIN_PASSWORD",
-      "description": "administrator password",
-      "generate": "expression",
-      "from": "[a-zA-Z0-9]{8}"
-    },
-    {
-      "name": "MYSQL_USER",
-      "description": "database username",
-      "generate": "expression",
-      "from": "user[A-Z0-9]{3}",
-      "required": true
-    },
-    {
-      "name": "MYSQL_PASSWORD",
-      "description": "database password",
-      "generate": "expression",
-      "from": "[a-zA-Z0-9]{8}",
-      "required": true
-    },
-    {
-      "name": "MYSQL_DATABASE",
-      "description": "database name",
-      "value": "root",
-      "required": true
-    }
-  ],
-  "labels": {
-    "template": "application-template-sample-pipeline"
-  }
-}
+      type: JenkinsPipeline
+    triggers:
+    - github:
+        secret: "${GITHUB_WEBHOOK_SECRET}"
+      type: GitHub
+    - generic:
+        secret: "${GENERIC_WEBHOOK_SECRET}"
+      type: Generic
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: blue-${NAME}
+  spec:
+    to:
+      kind: Service
+      name: ${NAME}-blue
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: green-${NAME}
+  spec:
+    to:
+      kind: Service
+      name: ${NAME}-green
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: ${NAME}
+  spec:
+    alternateBackends:
+    - name: ${NAME}-green
+      weight: "0"
+    to:
+      kind: Service
+      name: ${NAME}-blue
+      weight: "100"
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+    name: ${NAME}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Defines how to build the application
+    name: ${NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${NAME}:latest
+    postCommit:
+      script: npm test
+    source:
+      contextDir: ${CONTEXT_DIR}
+      git:
+        ref: ${SOURCE_REPOSITORY_REF}
+        uri: ${SOURCE_REPOSITORY_URL}
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: NPM_MIRROR
+          value: ${NPM_MIRROR}
+        from:
+          kind: ImageStreamTag
+          name: nodejs:4
+          namespace: ${NAMESPACE}
+      type: Source
+    triggers:
+    - github:
+        secret: ${GITHUB_WEBHOOK_SECRET}
+      type: GitHub
+    - generic:
+        secret: ${GENERIC_WEBHOOK_SECRET}
+      type: Generic
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}", "namespace": "", "kind": "Service"}]'
+    name: ${NAME}-blue
+  spec:
+    ports:
+    - name: web
+      port: 8080
+      targetPort: 8080
+    selector:
+      name: ${NAME}-blue
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the application server
+    name: ${NAME}-blue
+  spec:
+    replicas: 1
+    selector:
+      name: ${NAME}-blue
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: ${NAME}-blue
+        name: ${NAME}-blue
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: ${DATABASE_SERVICE_NAME}
+          - name: MONGODB_USER
+            value: ${DATABASE_USER}
+          - name: MONGODB_PASSWORD
+            value: ${DATABASE_PASSWORD}
+          - name: MONGODB_DATABASE
+            value: ${DATABASE_NAME}
+          - name: MONGODB_ADMIN_PASSWORD
+            value: ${DATABASE_ADMIN_PASSWORD}
+          image: ' '
+          livenessProbe:
+            httpGet:
+              path: /pagecount
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+          name: nodejs-mongodb-example
+          ports:
+          - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /pagecount
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: ${MEMORY_LIMIT}
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nodejs-mongodb-example
+        from:
+          kind: ImageStreamTag
+          name: ${NAME}:blue
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}", "namespace": "", "kind": "Service"}]'
+    name: ${NAME}-green
+  spec:
+    ports:
+    - name: web
+      port: 8080
+      targetPort: 8080
+    selector:
+      name: ${NAME}-green
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the application server
+    name: ${NAME}-green
+  spec:
+    replicas: 1
+    selector:
+      name: ${NAME}-green
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: ${NAME}-green
+        name: ${NAME}-green
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: ${DATABASE_SERVICE_NAME}
+          - name: MONGODB_USER
+            value: ${DATABASE_USER}
+          - name: MONGODB_PASSWORD
+            value: ${DATABASE_PASSWORD}
+          - name: MONGODB_DATABASE
+            value: ${DATABASE_NAME}
+          - name: MONGODB_ADMIN_PASSWORD
+            value: ${DATABASE_ADMIN_PASSWORD}
+          image: ' '
+          livenessProbe:
+            httpGet:
+              path: /pagecount
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+          name: nodejs-mongodb-example
+          ports:
+          - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /pagecount
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: ${MEMORY_LIMIT}
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nodejs-mongodb-example
+        from:
+          kind: ImageStreamTag
+          name: ${NAME}:green
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes the database server
+    name: ${DATABASE_SERVICE_NAME}
+  spec:
+    ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+    selector:
+      name: ${DATABASE_SERVICE_NAME}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the database
+    name: ${DATABASE_SERVICE_NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${DATABASE_SERVICE_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${DATABASE_SERVICE_NAME}
+        name: ${DATABASE_SERVICE_NAME}
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            value: ${DATABASE_USER}
+          - name: MONGODB_PASSWORD
+            value: ${DATABASE_PASSWORD}
+          - name: MONGODB_DATABASE
+            value: ${DATABASE_NAME}
+          - name: MONGODB_ADMIN_PASSWORD
+            value: ${DATABASE_ADMIN_PASSWORD}
+          image: ' '
+          livenessProbe:
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            initialDelaySeconds: 3
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: ${MEMORY_MONGODB_LIMIT}
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: ${DATABASE_SERVICE_NAME}-data
+        volumes:
+        - emptyDir:
+            medium: ""
+          name: ${DATABASE_SERVICE_NAME}-data
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mongodb
+        from:
+          kind: ImageStreamTag
+          name: mongodb:3.2
+          namespace: ${NAMESPACE}
+      type: ImageChange
+    - type: ConfigChange
+parameters:
+- description: The name assigned to all of the frontend objects defined in this template.
+  displayName: Name
+  name: NAME
+  required: true
+  value: nodejs-mongodb-example
+- description: The exposed hostname that will route to the Node.js service, if left
+    blank a value will be defaulted.
+  displayName: Application Hostname
+  name: APPLICATION_DOMAIN
+- description: The URL of the repository with your application source code.
+  displayName: Git Repository URL
+  name: SOURCE_REPOSITORY_URL
+  required: true
+  value: https://github.com/openshift/nodejs-ex.git
+- description: The reference of the repository with your application source code.
+  displayName: Git Repository Ref
+  name: SOURCE_REPOSITORY_REF
+  required: true
+  value: master
+- displayName: Database Name
+  name: DATABASE_NAME
+  required: true
+  value: sampledb
+- description: Username for MongoDB user that will be used for accessing the database.
+  displayName: MongoDB Username
+  from: user[A-Z0-9]{3}
+  generate: expression
+  name: DATABASE_USER
+- description: Password for the MongoDB user.
+  displayName: MongoDB Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: DATABASE_PASSWORD
+- description: Maximum amount of memory the Node.js container can use.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
+- description: Maximum amount of memory the MongoDB container can use.
+  displayName: Memory Limit (MongoDB)
+  name: MEMORY_MONGODB_LIMIT
+  required: true
+  value: 512Mi
+- displayName: Database Service Name
+  name: DATABASE_SERVICE_NAME
+  required: true
+  value: mongodb
+- description: Password for the database admin user.
+  displayName: Database Administrator Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: DATABASE_ADMIN_PASSWORD
+- description: Set this to the relative path to your project if it is not in the root
+    of your repository.
+  displayName: Context Directory
+  name: CONTEXT_DIR
+- description: A secret string used to configure the GitHub webhook.
+  displayName: GitHub Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: GITHUB_WEBHOOK_SECRET
+- description: A secret string used to configure the Generic webhook.
+  displayName: Generic Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: GENERIC_WEBHOOK_SECRET
+- description: The custom NPM mirror URL
+  displayName: Custom NPM Mirror URL
+  name: NPM_MIRROR
+- description: The OpenShift Namespace where the NodeJS and MongoDB ImageStreams reside.
+  displayName: Namespace
+  name: NAMESPACE
+  required: true
+  value: openshift
 `)
 
-func examplesJenkinsPipelineSamplepipelineJsonBytes() ([]byte, error) {
-	return _examplesJenkinsPipelineSamplepipelineJson, nil
+func examplesJenkinsPipelineBluegreenPipelineYamlBytes() ([]byte, error) {
+	return _examplesJenkinsPipelineBluegreenPipelineYaml, nil
 }
 
-func examplesJenkinsPipelineSamplepipelineJson() (*asset, error) {
-	bytes, err := examplesJenkinsPipelineSamplepipelineJsonBytes()
+func examplesJenkinsPipelineBluegreenPipelineYaml() (*asset, error) {
+	bytes, err := examplesJenkinsPipelineBluegreenPipelineYamlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "examples/jenkins/pipeline/samplepipeline.json", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "examples/jenkins/pipeline/bluegreen-pipeline.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _examplesJenkinsPipelineMapsappPipelineYaml = []byte(`apiVersion: v1
+kind: Template
+labels:
+  application: mapsapp-pipeline
+metadata:
+  name: mapsapp-pipeline
+parameters:
+- description: NationalParks application source URI
+  displayName: NationalParks Source URI
+  name: NATIONALPARKS_GIT_URI
+  required: true
+  value: https://github.com/openshift-roadshow/nationalparks.git
+- description: NationalParks application source reference
+  displayName: NationalParks Source Ref
+  name: NATIONALPARKS_GIT_REF
+  required: true
+  value: master
+- description: MLBParks application source URI
+  displayName: MLBParks Source URI
+  name: MLBPARKS_GIT_URI
+  required: true
+  value: https://github.com/openshift-roadshow/mlbparks.git
+- description: MLBParks application source reference
+  displayName: MLBParks Source Ref
+  name: MLBPARKS_GIT_REF
+  required: true
+  value: master
+- description: ParksMap application source URI
+  displayName: ParksMap Source URI
+  name: PARKSMAP_GIT_URI
+  required: true
+  value: https://github.com/openshift-roadshow/parksmap-web.git
+- description: ParksMap application source reference
+  displayName: ParksMap Source Ref
+  name: PARKSMAP_GIT_REF
+  required: true
+  value: master
+- name: GITHUB_WEBHOOK_SECRET
+  displayName: GitHub Webhook Secret
+  description: A secret string used to configure the GitHub webhook.
+  generate: expression
+  from: "[a-zA-Z0-9]{40}"
+- name: GENERIC_WEBHOOK_SECRET
+  displayName: Generic Webhook Secret,
+  description: A secret string used to configure the Generic webhook.
+  generate: expression
+  from: "[a-zA-Z0-9]{40}"
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      build: mapsapp-pipeline
+    name: mapsapp-pipeline
+  spec:
+    runPolicy: Serial
+    source: {}
+    strategy:
+      type: JenkinsPipeline
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          def project = ""
+          node {
+            project = "${env.PROJECT_NAME}"
+
+            stage('Create NationalParks back-end') {
+              def nationalParksURL = "${NATIONALPARKS_GIT_URI}"
+              def nationalParksBranch = "${NATIONALPARKS_GIT_REF}"
+              checkout([$class: "GitSCM", branches: [[name: "*/${nationalParksBranch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: "RelativeTargetDirectory", relativeTargetDir: "nationalparks"]], submoduleCfg: [], userRemoteConfigs: [[url: "${nationalParksURL}"]]])
+              sh "oc new-app -f nationalparks/ose3/pipeline-buildconfig-template.json -p GIT_URI=${nationalParksURL} -p GIT_REF=${nationalParksBranch} -n ${project} --dry-run -o yaml | oc apply -f - -n ${project}"
+            }
+
+            stage('Create MLBParks back-end') {
+              def mlbParksURL = "${MLBPARKS_GIT_URI}"
+              def mlbParksBranch = "${MLBPARKS_GIT_REF}"
+              checkout([$class: "GitSCM", branches: [[name: "*/${mlbParksBranch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: "RelativeTargetDirectory", relativeTargetDir: "mlbparks"]], submoduleCfg: [], userRemoteConfigs: [[url: "${mlbParksURL}"]]])
+              sh "oc new-app -f mlbparks/ose3/pipeline-buildconfig-template.json -p GIT_URI=${mlbParksURL} -p GIT_REF=${mlbParksBranch} -n ${project} --dry-run -o yaml | oc apply -f - -n ${project}"
+            }
+
+            stage('Create ParksMap front-end') {
+              def parksMapURL = "${PARKSMAP_GIT_URI}"
+              def parksMapBranch = "${PARKSMAP_GIT_REF}"
+              checkout([$class: "GitSCM", branches: [[name: "*/${parksMapBranch}"]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: "RelativeTargetDirectory", relativeTargetDir: "parksmap"]], submoduleCfg: [], userRemoteConfigs: [[url: "${parksMapURL}"]]])
+              sh "oc new-app -f parksmap/ose3/pipeline-buildconfig-template.json -p GIT_URI=${parksMapURL} -p GIT_REF=${parksMapBranch} -n ${project} --dry-run -o yaml | oc apply -f - -n ${project}"
+            }
+          }
+
+          stage('Build Back-ends') {
+            parallel (
+              "nationalparks": {
+                node {
+                  openshiftBuild buildConfig: "nationalparks-pipeline", namespace: project
+                }
+              },
+              "mlbparks": {
+                node {
+                  openshiftBuild buildConfig: "mlbparks-pipeline", namespace: project
+                }
+              }
+            )
+          }
+
+          node {
+            stage('Build Front-end') {
+              openshiftBuild buildConfig: "parksmap-pipeline", namespace: project
+            }
+          }
+    triggers:
+    - github:
+        secret: ${GITHUB_TRIGGER_SECRET}
+      type: GitHub
+    - generic:
+        secret: ${GENERIC_TRIGGER_SECRET}
+      type: Generic
+`)
+
+func examplesJenkinsPipelineMapsappPipelineYamlBytes() ([]byte, error) {
+	return _examplesJenkinsPipelineMapsappPipelineYaml, nil
+}
+
+func examplesJenkinsPipelineMapsappPipelineYaml() (*asset, error) {
+	bytes, err := examplesJenkinsPipelineMapsappPipelineYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "examples/jenkins/pipeline/mapsapp-pipeline.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _examplesJenkinsPipelineMavenPipelineYaml = []byte(`apiVersion: v1
+kind: Template
+metadata:
+  name: maven-pipeline
+parameters:
+- name: APP_NAME
+  description: The name assigned to all of the application objects defined in this template.
+  displayName: Application Name
+  required: true
+  value: openshift-jee-sample
+- name: GIT_SOURCE_URL
+  description: The source URL for the application
+  displayName: Source URL
+  required: true
+  value: https://github.com/bparees/openshift-jee-sample.git
+- name: GIT_SOURCE_REF
+  description: The source Ref for the application
+  displayName: Source Ref
+  required: true
+  value: master
+- description: A secret string used to configure the GitHub webhook.
+  displayName: GitHub Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: GITHUB_WEBHOOK_SECRET
+  required: true
+- description: A secret string used to configure the Generic webhook.
+  displayName: Generic Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: GENERIC_WEBHOOK_SECRET
+  required: true
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec: {}
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "${NAME}", "namespace": "", "kind": "DeploymentConfig"}]'
+    creationTimestamp: null
+    labels:
+      name: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          def appName="${APP_NAME}"
+          def project=""
+
+          node {
+            stage("Initialize") {
+              project = env.PROJECT_NAME
+            }
+          }
+
+          node("maven") {
+            stage("Checkout") {
+              git url: "${GIT_SOURCE_URL}", branch: "${GIT_SOURCE_REF}"
+            }
+            stage("Build WAR") {
+              sh "mvn clean package -Popenshift"
+              stash name:"war", includes:"target/ROOT.war"
+            }
+          }
+
+          node {
+            stage("Build Image") {
+              unstash name:"war"
+              sh "oc start-build ${appName}-docker --from-file=target/ROOT.war --follow -n ${project}"
+            }
+            stage("Deploy") {
+              openshiftDeploy deploymentConfig: appName, namespace: project
+            }
+          }
+      type: JenkinsPipeline
+    triggers:
+    - github:
+        secret: "${GITHUB_WEBHOOK_SECRET}"
+      type: GitHub
+    - generic:
+        secret: "${GENERIC_WEBHOOK_SECRET}"
+      type: Generic
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ${APP_NAME}-docker
+    name: ${APP_NAME}-docker
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APP_NAME}:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      dockerfile: |-
+        FROM wildfly
+        COPY ROOT.war /wildfly/standalone/deployments/ROOT.war
+        CMD $STI_SCRIPTS_PATH/run
+      binary:
+        asFile: ROOT.war
+      type: Docker
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: wildfly:latest
+          namespace: openshift
+      type: Docker
+    triggers: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${APP_NAME}
+      deploymentconfig: ${APP_NAME}
+    strategy:
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/container.${APP_NAME}.image.entrypoint: '["container-entrypoint","/bin/sh","-c","$STI_SCRIPTS_PATH/usage"]'
+        labels:
+          app: ${APP_NAME}
+          deploymentconfig: ${APP_NAME}
+      spec:
+        containers:
+        - image: ${APP_NAME}:latest
+          imagePullPolicy: Always
+          name: ${APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 2
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:latest
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: ${APP_NAME}
+      deploymentconfig: ${APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${APP_NAME}
+  spec:
+    to:
+      kind: Service
+      name: ${APP_NAME}
+      weight: 100
+    port:
+      targetPort: 8080-tcp
+    wildcardPolicy: None
+`)
+
+func examplesJenkinsPipelineMavenPipelineYamlBytes() ([]byte, error) {
+	return _examplesJenkinsPipelineMavenPipelineYaml, nil
+}
+
+func examplesJenkinsPipelineMavenPipelineYaml() (*asset, error) {
+	bytes, err := examplesJenkinsPipelineMavenPipelineYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "examples/jenkins/pipeline/maven-pipeline.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _examplesJenkinsPipelineSamplepipelineYaml = []byte(`apiVersion: v1
+kind: Template
+labels:
+  template: application-template-sample-pipeline
+message: |-
+  A Jenkins server will be automatically instantiated in this project to manage
+  the Pipeline BuildConfig created by this template.  You will be able to log in to
+  it using your OpenShift user credentials.
+metadata:
+  annotations:
+    description: |-
+      This example showcases the new Jenkins Pipeline integration in OpenShift,
+      which performs continuous integration and deployment right on the platform.
+      The template contains a Jenkinsfile - a definition of a multi-stage CI/CD process - that
+      leverages the underlying OpenShift platform for dynamic and scalable
+      builds. OpenShift integrates the status of your pipeline builds into the web
+      console allowing you to see your entire application lifecycle in a single view.
+    iconClass: icon-jenkins
+    tags: instant-app,jenkins
+  name: jenkins-pipeline-example
+parameters:
+- description: The name assigned to all of the frontend objects defined in this template.
+  displayName: Name
+  name: NAME
+  required: true
+  value: nodejs-mongodb-example
+- description: The exposed hostname that will route to the Node.js service, if left
+    blank a value will be defaulted.
+  displayName: Application Hostname
+  name: APPLICATION_DOMAIN
+- description: The URL of the repository with your application source code.
+  displayName: Git Repository URL
+  name: SOURCE_REPOSITORY_URL
+  required: true
+  value: https://github.com/openshift/nodejs-ex.git
+- displayName: Database Name
+  name: DATABASE_NAME
+  required: true
+  value: sampledb
+- description: Username for MongoDB user that will be used for accessing the database.
+  displayName: MongoDB Username
+  from: user[A-Z0-9]{3}
+  generate: expression
+  name: DATABASE_USER
+- description: Password for the MongoDB user.
+  displayName: MongoDB Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: DATABASE_PASSWORD
+- description: Maximum amount of memory the Node.js container can use.
+  displayName: Memory Limit
+  name: MEMORY_LIMIT
+  required: true
+  value: 512Mi
+- description: Maximum amount of memory the MongoDB container can use.
+  displayName: Memory Limit (MongoDB)
+  name: MEMORY_MONGODB_LIMIT
+  required: true
+  value: 512Mi
+- displayName: Database Service Name
+  name: DATABASE_SERVICE_NAME
+  required: true
+  value: mongodb
+- description: Password for the database admin user.
+  displayName: Database Administrator Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: DATABASE_ADMIN_PASSWORD
+- description: Set this to a branch name, tag or other ref of your repository if you
+    are not using the default branch.
+  displayName: Git Reference
+  name: SOURCE_REPOSITORY_REF
+- description: Set this to the relative path to your project if it is not in the root
+    of your repository.
+  displayName: Context Directory
+  name: CONTEXT_DIR
+- description: A secret string used to configure the GitHub webhook.
+  displayName: GitHub Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: GITHUB_WEBHOOK_SECRET
+- description: A secret string used to configure the Generic webhook.
+  displayName: Generic Webhook Secret
+  from: '[a-zA-Z0-9]{40}'
+  generate: expression
+  name: GENERIC_WEBHOOK_SECRET
+- description: The custom NPM mirror URL
+  displayName: Custom NPM Mirror URL
+  name: NPM_MIRROR
+- description: The OpenShift Namespace where the NodeJS and MongoDB ImageStreams reside.
+  displayName: Namespace
+  name: NAMESPACE
+  required: true
+  value: openshift
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "${NAME}", "namespace": "", "kind": "DeploymentConfig"}]'
+    labels:
+      name: sample-pipeline
+    name: sample-pipeline
+  spec:
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          node('nodejs') {
+            stage('build') {
+              openshiftBuild(buildConfig: '${NAME}', showBuildLogs: 'true')
+            }
+            stage('deploy') {
+              openshiftDeploy(deploymentConfig: '${NAME}')
+            }
+          }
+      type: JenkinsPipeline
+    triggers:
+    - github:
+        secret: secret101
+      type: GitHub
+    - generic:
+        secret: secret101
+      type: Generic
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name": "${DATABASE_SERVICE_NAME}", "namespace": "", "kind": "Service"}]'
+    name: ${NAME}
+  spec:
+    ports:
+    - name: web
+      port: 8080
+      targetPort: 8080
+    selector:
+      name: ${NAME}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: ${NAME}
+  spec:
+    host: ${APPLICATION_DOMAIN}
+    to:
+      kind: Service
+      name: ${NAME}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+    name: ${NAME}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Defines how to build the application
+    name: ${NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${NAME}:latest
+    postCommit:
+      script: npm test
+    source:
+      contextDir: ${CONTEXT_DIR}
+      git:
+        ref: ${SOURCE_REPOSITORY_REF}
+        uri: ${SOURCE_REPOSITORY_URL}
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: NPM_MIRROR
+          value: ${NPM_MIRROR}
+        from:
+          kind: ImageStreamTag
+          name: nodejs:4
+          namespace: ${NAMESPACE}
+      type: Source
+    triggers:
+    - github:
+        secret: ${GITHUB_WEBHOOK_SECRET}
+      type: GitHub
+    - generic:
+        secret: ${GENERIC_WEBHOOK_SECRET}
+      type: Generic
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the application server
+    name: ${NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${NAME}
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: ${NAME}
+        name: ${NAME}
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: ${DATABASE_SERVICE_NAME}
+          - name: MONGODB_USER
+            value: ${DATABASE_USER}
+          - name: MONGODB_PASSWORD
+            value: ${DATABASE_PASSWORD}
+          - name: MONGODB_DATABASE
+            value: ${DATABASE_NAME}
+          - name: MONGODB_ADMIN_PASSWORD
+            value: ${DATABASE_ADMIN_PASSWORD}
+          image: ' '
+          livenessProbe:
+            httpGet:
+              path: /pagecount
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+          name: nodejs-mongodb-example
+          ports:
+          - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /pagecount
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: ${MEMORY_LIMIT}
+    triggers:
+    - imageChangeParams:
+        automatic: false
+        containerNames:
+        - nodejs-mongodb-example
+        from:
+          kind: ImageStreamTag
+          name: ${NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes the database server
+    name: ${DATABASE_SERVICE_NAME}
+  spec:
+    ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+    selector:
+      name: ${DATABASE_SERVICE_NAME}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the database
+    name: ${DATABASE_SERVICE_NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${DATABASE_SERVICE_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${DATABASE_SERVICE_NAME}
+        name: ${DATABASE_SERVICE_NAME}
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            value: ${DATABASE_USER}
+          - name: MONGODB_PASSWORD
+            value: ${DATABASE_PASSWORD}
+          - name: MONGODB_DATABASE
+            value: ${DATABASE_NAME}
+          - name: MONGODB_ADMIN_PASSWORD
+            value: ${DATABASE_ADMIN_PASSWORD}
+          image: ' '
+          livenessProbe:
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            initialDelaySeconds: 3
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: ${MEMORY_MONGODB_LIMIT}
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: ${DATABASE_SERVICE_NAME}-data
+        volumes:
+        - emptyDir:
+            medium: ""
+          name: ${DATABASE_SERVICE_NAME}-data
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mongodb
+        from:
+          kind: ImageStreamTag
+          name: mongodb:3.2
+          namespace: ${NAMESPACE}
+      type: ImageChange
+    - type: ConfigChange
+`)
+
+func examplesJenkinsPipelineSamplepipelineYamlBytes() ([]byte, error) {
+	return _examplesJenkinsPipelineSamplepipelineYaml, nil
+}
+
+func examplesJenkinsPipelineSamplepipelineYaml() (*asset, error) {
+	bytes, err := examplesJenkinsPipelineSamplepipelineYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "examples/jenkins/pipeline/samplepipeline.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -4280,22 +5429,36 @@ var _examplesQuickstartsCakephpMysqlJson = []byte(`{
   "metadata": {
     "name": "cakephp-mysql-example",
     "annotations": {
-      "description": "An example CakePHP application with a MySQL database",
-      "tags": "quickstart,php,cakephp,mysql",
+      "openshift.io/display-name": "CakePHP + MySQL (Ephemeral)",
+      "description": "An example CakePHP application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/cakephp-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+      "tags": "quickstart,php,cakephp",
       "iconClass": "icon-php"
     }
   },
+  "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/openshift/cake-ex/blob/master/README.md.",
   "labels": {
     "template": "cakephp-mysql-example"
   },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${DATABASE_USER}",
+        "databasePassword" : "${DATABASE_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
         "name": "${NAME}",
         "annotations": {
-          "description": "Exposes and load balances the application pods"
+          "description": "Exposes and load balances the application pods",
+          "service.alpha.openshift.io/dependencies": "[{\"name\": \"${DATABASE_SERVICE_NAME}\", \"kind\": \"Service\"}]"
         }
       },
       "spec": {
@@ -4485,11 +5648,21 @@ var _examplesQuickstartsCakephpMysqlJson = []byte(`{
                   },
                   {
                     "name": "DATABASE_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "DATABASE_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "CAKEPHP_SECRET_TOKEN",
@@ -4622,12 +5795,22 @@ var _examplesQuickstartsCakephpMysqlJson = []byte(`{
                 },
                 "env": [
                     {
-                        "name": "MYSQL_USER",
-                        "value": "${DATABASE_USER}"
+                      "name": "MYSQL_USER",
+                      "valueFrom": {
+                        "secretKeyRef" : {
+                          "name" : "${NAME}",
+                          "key" : "databaseUser"
+                        }
+                      }
                     },
                     {
-                        "name": "MYSQL_PASSWORD",
-                        "value": "${DATABASE_PASSWORD}"
+                      "name": "MYSQL_PASSWORD",
+                      "valueFrom": {
+                        "secretKeyRef" : {
+                          "name" : "${NAME}",
+                          "key" : "databasePassword"
+                          }
+                        }
                     },
                     {
                         "name": "MYSQL_DATABASE",
@@ -4794,22 +5977,36 @@ var _examplesQuickstartsDancerMysqlJson = []byte(`{
   "metadata": {
     "name": "dancer-mysql-example",
     "annotations": {
-      "description": "An example Dancer application with a MySQL database",
-      "tags": "quickstart,perl,dancer,mysql",
+      "openshift.io/display-name": "Dancer + MySQL (Ephemeral)",
+      "description": "An example Dancer application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+      "tags": "quickstart,perl,dancer",
       "iconClass": "icon-perl"
     }
   },
+  "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.",
   "labels": {
     "template": "dancer-mysql-example"
   },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${DATABASE_USER}",
+        "databasePassword" : "${DATABASE_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
         "name": "${NAME}",
         "annotations": {
-          "description": "Exposes and load balances the application pods"
+          "description": "Exposes and load balances the application pods",
+          "service.alpha.openshift.io/dependencies": "[{\"name\": \"${DATABASE_SERVICE_NAME}\", \"kind\": \"Service\"}]"
         }
       },
       "spec": {
@@ -4902,7 +6099,10 @@ var _examplesQuickstartsDancerMysqlJson = []byte(`{
               "secret": "${GITHUB_WEBHOOK_SECRET}"
             }
           }
-        ]
+        ],
+        "postCommit": {
+          "script": "perl -I extlib/lib/perl5 -I lib t/*"
+        }
       }
     },
     {
@@ -4977,11 +6177,21 @@ var _examplesQuickstartsDancerMysqlJson = []byte(`{
                   },
                   {
                     "name": "MYSQL_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_DATABASE",
@@ -5111,11 +6321,21 @@ var _examplesQuickstartsDancerMysqlJson = []byte(`{
                 "env": [
                   {
                     "name": "MYSQL_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MYSQL_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                       "name": "MYSQL_DATABASE",
@@ -5194,18 +6414,6 @@ var _examplesQuickstartsDancerMysqlJson = []byte(`{
       "from": "[a-zA-Z0-9]{40}"
     },
     {
-      "name": "ADMIN_USERNAME",
-      "displayName": "Administrator Username",
-      "generate": "expression",
-      "from": "admin[A-Z0-9]{3}"
-    },
-    {
-      "name": "ADMIN_PASSWORD",
-      "displayName": "Administrator Password",
-      "generate": "expression",
-      "from": "[a-zA-Z0-9]{8}"
-    },
-    {
       "name": "DATABASE_SERVICE_NAME",
       "displayName": "Database Service Name",
       "required": true,
@@ -5273,22 +6481,36 @@ var _examplesQuickstartsDjangoPostgresqlJson = []byte(`{
   "metadata": {
     "name": "django-psql-example",
     "annotations": {
-      "description": "An example Django application with a PostgreSQL database",
-      "tags": "quickstart,python,django,postgresql",
+      "openshift.io/display-name": "Django + PostgreSQL (Ephemeral)",
+      "description": "An example Django application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/django-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+      "tags": "quickstart,python,django",
       "iconClass": "icon-python"
     }
   },
+  "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/openshift/django-ex/blob/master/README.md.",
   "labels": {
     "template": "django-psql-example"
   },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${DATABASE_USER}",
+        "databasePassword" : "${DATABASE_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
         "name": "${NAME}",
         "annotations": {
-          "description": "Exposes and load balances the application pods"
+          "description": "Exposes and load balances the application pods",
+          "service.alpha.openshift.io/dependencies": "[{\"name\": \"${DATABASE_SERVICE_NAME}\", \"kind\": \"Service\"}]"
         }
       },
       "spec": {
@@ -5470,11 +6692,21 @@ var _examplesQuickstartsDjangoPostgresqlJson = []byte(`{
                   },
                   {
                     "name": "DATABASE_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "DATABASE_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "APP_CONFIG",
@@ -5580,11 +6812,21 @@ var _examplesQuickstartsDjangoPostgresqlJson = []byte(`{
                 "env": [
                   {
                     "name": "POSTGRESQL_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_DATABASE",
@@ -5756,22 +6998,37 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
   "metadata": {
     "name": "nodejs-mongodb-example",
     "annotations": {
-      "description": "An example Node.js application with a MongoDB database",
-      "tags": "quickstart,nodejs,mongodb",
+      "openshift.io/display-name": "Node.js + MongoDB (Ephemeral)",
+      "description": "An example Node.js application with a MongoDB database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/nodejs-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+      "tags": "quickstart,nodejs",
       "iconClass": "icon-nodejs"
     }
   },
+  "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/openshift/nodejs-ex/blob/master/README.md.",
   "labels": {
     "template": "nodejs-mongodb-example"
   },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      },
+      "stringData": {
+        "databaseUser": "${DATABASE_USER}",
+        "databasePassword": "${DATABASE_PASSWORD}",
+        "databaseAdminPassword" : "${DATABASE_ADMIN_PASSWORD}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
         "name": "${NAME}",
         "annotations": {
-          "description": "Exposes and load balances the application pods"
+          "description": "Exposes and load balances the application pods",
+          "service.alpha.openshift.io/dependencies": "[{\"name\": \"${DATABASE_SERVICE_NAME}\", \"kind\": \"Service\"}]"
         }
       },
       "spec": {
@@ -5837,10 +7094,10 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
               "namespace": "${NAMESPACE}",
               "name": "nodejs:4"
             },
-            "env":  [
+            "env": [
               {
-                  "name": "NPM_MIRROR",
-                  "value": "${NPM_MIRROR}"
+                "name": "NPM_MIRROR",
+                "value": "${NPM_MIRROR}"
               }
             ]
           }
@@ -5935,11 +7192,21 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
                   },
                   {
                     "name": "MONGODB_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_DATABASE",
@@ -5947,7 +7214,12 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
                   },
                   {
                     "name": "MONGODB_ADMIN_PASSWORD",
-                    "value": "${DATABASE_ADMIN_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseAdminPassword"
+                      }
+                    }
                   }
                 ],
                 "readinessProbe": {
@@ -5959,17 +7231,17 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
                   }
                 },
                 "livenessProbe": {
-                    "timeoutSeconds": 3,
-                    "initialDelaySeconds": 30,
-                    "httpGet": {
-                        "path": "/pagecount",
-                        "port": 8080
-                    }
+                  "timeoutSeconds": 3,
+                  "initialDelaySeconds": 30,
+                  "httpGet": {
+                    "path": "/pagecount",
+                    "port": 8080
+                  }
                 },
                 "resources": {
-                    "limits": {
-                        "memory": "${MEMORY_LIMIT}"
-                    }
+                  "limits": {
+                    "memory": "${MEMORY_LIMIT}"
+                  }
                 }
               }
             ]
@@ -6055,11 +7327,21 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
                 "env": [
                   {
                     "name": "MONGODB_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "MONGODB_DATABASE",
@@ -6067,14 +7349,24 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
                   },
                   {
                     "name": "MONGODB_ADMIN_PASSWORD",
-                    "value": "${DATABASE_ADMIN_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseAdminPassword"
+                      }
+                    }
                   }
                 ],
                 "readinessProbe": {
                   "timeoutSeconds": 1,
                   "initialDelaySeconds": 3,
                   "exec": {
-                    "command": [ "/bin/sh", "-i", "-c", "mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""]
+                    "command": [
+                      "/bin/sh",
+                      "-i",
+                      "-c",
+                      "mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""
+                    ]
                   }
                 },
                 "livenessProbe": {
@@ -6085,9 +7377,9 @@ var _examplesQuickstartsNodejsMongodbJson = []byte(`{
                   }
                 },
                 "resources": {
-                    "limits": {
-                        "memory": "${MEMORY_MONGODB_LIMIT}"
-                    }
+                  "limits": {
+                    "memory": "${MEMORY_MONGODB_LIMIT}"
+                  }
                 },
                 "volumeMounts": [
                   {
@@ -6240,22 +7532,39 @@ var _examplesQuickstartsRailsPostgresqlJson = []byte(`{
   "metadata": {
     "name": "rails-postgresql-example",
     "annotations": {
-      "description": "An example Rails application with a PostgreSQL database",
-      "tags": "quickstart,ruby,rails,postgresql",
+      "openshift.io/display-name": "Rails + PostgreSQL (Ephemeral)",
+      "description": "An example Rails application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/rails-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+      "tags": "quickstart,ruby,rails",
       "iconClass": "icon-ruby"
     }
   },
+  "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/openshift/rails-ex/blob/master/README.md.",
   "labels": {
     "template": "rails-postgresql-example"
   },
   "objects": [
+    {
+      "kind": "Secret",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}"
+      },
+      "stringData" : {
+        "databaseUser" : "${DATABASE_USER}",
+        "databasePassword" : "${DATABASE_PASSWORD}",
+        "applicationUser" : "${APPLICATION_USER}",
+        "applicationPassword" : "${APPLICATION_PASSWORD}",
+        "keyBase" : "${SECRET_KEY_BASE}"
+      }
+    },
     {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
         "name": "${NAME}",
         "annotations": {
-          "description": "Exposes and load balances the application pods"
+          "description": "Exposes and load balances the application pods",
+          "service.alpha.openshift.io/dependencies": "[{\"name\": \"${DATABASE_SERVICE_NAME}\", \"kind\": \"Service\"}]"
         }
       },
       "spec": {
@@ -6440,11 +7749,21 @@ var _examplesQuickstartsRailsPostgresqlJson = []byte(`{
                   },
                   {
                     "name": "POSTGRESQL_USER",
-                    "value": "${DATABASE_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databaseUser"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_PASSWORD",
-                    "value": "${DATABASE_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "databasePassword"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_DATABASE",
@@ -6452,7 +7771,12 @@ var _examplesQuickstartsRailsPostgresqlJson = []byte(`{
                   },
                   {
                     "name": "SECRET_KEY_BASE",
-                    "value": "${SECRET_KEY_BASE}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "keyBase"
+                      }
+                    }
                   },
                   {
                     "name": "POSTGRESQL_MAX_CONNECTIONS",
@@ -6468,11 +7792,21 @@ var _examplesQuickstartsRailsPostgresqlJson = []byte(`{
                   },
                   {
                     "name": "APPLICATION_USER",
-                    "value": "${APPLICATION_USER}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "applicationUser"
+                      }
+                    }
                   },
                   {
                     "name": "APPLICATION_PASSWORD",
-                    "value": "${APPLICATION_PASSWORD}"
+                    "valueFrom": {
+                      "secretKeyRef" : {
+                        "name" : "${NAME}",
+                        "key" : "applicationPassword"
+                      }
+                    }
                   },
                   {
                     "name": "RAILS_ENV",
@@ -6771,6 +8105,348 @@ func examplesQuickstartsRailsPostgresqlJson() (*asset, error) {
 	return a, nil
 }
 
+var _examplesLoggingLoggingDeployerYaml = []byte(`apiVersion: "v1"
+kind: "List"
+items:
+-
+  apiVersion: "v1"
+  kind: "Template"
+  metadata:
+    name: logging-deployer-account-template
+    annotations:
+      description: "Template for creating the deployer account and roles needed for the aggregated logging deployer. Create as cluster-admin."
+      tags: "infrastructure"
+  objects:
+  -
+    apiVersion: v1
+    kind: ServiceAccount
+    name: logging-deployer
+    metadata:
+      name: logging-deployer
+      labels:
+        logging-infra: deployer
+        provider: openshift
+        component: deployer
+  -
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: aggregated-logging-kibana
+  -
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: aggregated-logging-elasticsearch
+  -
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: aggregated-logging-fluentd
+  -
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: aggregated-logging-curator
+  - apiVersion: v1
+    kind: ClusterRole
+    metadata:
+      name: oauth-editor
+    rules:
+    - resources:
+      - oauthclients
+      verbs:
+      - create
+      - delete
+  - apiVersion: v1
+    kind: ClusterRole
+    metadata:
+      name: daemonset-admin
+    rules:
+    - resources:
+      - daemonsets
+      apiGroups:
+      - extensions
+      verbs:
+      - create
+      - get
+      - list
+      - watch
+      - delete
+      - update
+  -
+    apiVersion: v1
+    kind: RoleBinding
+    metadata:
+      name: logging-deployer-edit-role
+    roleRef:
+      kind: ClusterRole
+      name: edit
+    subjects:
+    - kind: ServiceAccount
+      name: logging-deployer
+  -
+    apiVersion: v1
+    kind: RoleBinding
+    metadata:
+      name: logging-deployer-dsadmin-role
+    roleRef:
+      kind: ClusterRole
+      name: daemonset-admin
+    subjects:
+    - kind: ServiceAccount
+      name: logging-deployer
+-
+  apiVersion: "v1"
+  kind: "Template"
+  metadata:
+    name: logging-deployer-template
+    annotations:
+      description: "Template for running the aggregated logging deployer in a pod. Requires empowered 'logging-deployer' service account."
+      tags: "infrastructure"
+  labels:
+    logging-infra: deployer
+    provider: openshift
+  objects:
+  -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      generateName: logging-deployer-
+    spec:
+      containers:
+      - image: ${IMAGE_PREFIX}logging-deployment:${IMAGE_VERSION}
+        imagePullPolicy: Always
+        name: deployer
+        volumeMounts:
+        - name: empty
+          mountPath: /etc/deploy
+        env:
+          - name: PROJECT
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: IMAGE_PREFIX
+            value: ${IMAGE_PREFIX}
+          - name: IMAGE_VERSION
+            value: ${IMAGE_VERSION}
+          - name: IMAGE_PULL_SECRET
+            value: ${IMAGE_PULL_SECRET}
+          - name: INSECURE_REGISTRY
+            value: ${INSECURE_REGISTRY}
+          - name: ENABLE_OPS_CLUSTER
+            value: ${ENABLE_OPS_CLUSTER}
+          - name: KIBANA_HOSTNAME
+            value: ${KIBANA_HOSTNAME}
+          - name: KIBANA_OPS_HOSTNAME
+            value: ${KIBANA_OPS_HOSTNAME}
+          - name: PUBLIC_MASTER_URL
+            value: ${PUBLIC_MASTER_URL}
+          - name: MASTER_URL
+            value: ${MASTER_URL}
+          - name: ES_INSTANCE_RAM
+            value: ${ES_INSTANCE_RAM}
+          - name: ES_PVC_SIZE
+            value: ${ES_PVC_SIZE}
+          - name: ES_PVC_PREFIX
+            value: ${ES_PVC_PREFIX}
+          - name: ES_PVC_DYNAMIC
+            value: ${ES_PVC_DYNAMIC}
+          - name: ES_CLUSTER_SIZE
+            value: ${ES_CLUSTER_SIZE}
+          - name: ES_NODE_QUORUM
+            value: ${ES_NODE_QUORUM}
+          - name: ES_RECOVER_AFTER_NODES
+            value: ${ES_RECOVER_AFTER_NODES}
+          - name: ES_RECOVER_EXPECTED_NODES
+            value: ${ES_RECOVER_EXPECTED_NODES}
+          - name: ES_RECOVER_AFTER_TIME
+            value: ${ES_RECOVER_AFTER_TIME}
+          - name: ES_OPS_INSTANCE_RAM
+            value: ${ES_OPS_INSTANCE_RAM}
+          - name: ES_OPS_PVC_SIZE
+            value: ${ES_OPS_PVC_SIZE}
+          - name: ES_OPS_PVC_PREFIX
+            value: ${ES_OPS_PVC_PREFIX}
+          - name: ES_OPS_PVC_DYNAMIC
+            value: ${ES_OPS_PVC_DYNAMIC}
+          - name: ES_OPS_CLUSTER_SIZE
+            value: ${ES_OPS_CLUSTER_SIZE}
+          - name: ES_OPS_NODE_QUORUM
+            value: ${ES_OPS_NODE_QUORUM}
+          - name: ES_OPS_RECOVER_AFTER_NODES
+            value: ${ES_OPS_RECOVER_AFTER_NODES}
+          - name: ES_OPS_RECOVER_EXPECTED_NODES
+            value: ${ES_OPS_RECOVER_EXPECTED_NODES}
+          - name: ES_OPS_RECOVER_AFTER_TIME
+            value: ${ES_OPS_RECOVER_AFTER_TIME}
+          - name: FLUENTD_NODESELECTOR
+            value: ${FLUENTD_NODESELECTOR}
+          - name: ES_NODESELECTOR
+            value: ${ES_NODESELECTOR}
+          - name: ES_OPS_NODESELECTOR
+            value: ${ES_OPS_NODESELECTOR}
+          - name: KIBANA_NODESELECTOR
+            value: ${KIBANA_NODESELECTOR}
+          - name: KIBANA_OPS_NODESELECTOR
+            value: ${KIBANA_OPS_NODESELECTOR}
+          - name: CURATOR_NODESELECTOR
+            value: ${CURATOR_NODESELECTOR}
+          - name: CURATOR_OPS_NODESELECTOR
+            value: ${CURATOR_OPS_NODESELECTOR}
+          - name: MODE
+            value: ${MODE}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      serviceAccount: logging-deployer
+      volumes:
+      - name: empty
+        emptyDir: {}
+  parameters:
+  -
+    description: "The mode that the deployer runs in."
+    name: MODE
+    value: "install"
+  -
+    description: 'Specify prefix for logging components; e.g. for "openshift/origin-logging-deployer:v1.1", set prefix "openshift/origin-"'
+    name: IMAGE_PREFIX
+    value: "docker.io/openshift/origin-"
+  -
+    description: 'Specify version for logging components; e.g. for "openshift/origin-logging-deployer:v1.1", set version "v1.1"'
+    name: IMAGE_VERSION
+    value: "latest"
+  -
+    description: "(Deprecated) Specify the name of an existing pull secret to be used for pulling component images from an authenticated registry."
+    name: IMAGE_PULL_SECRET
+  -
+    description: "(Deprecated) Allow the registry for logging component images to be non-secure (not secured with a certificate signed by a known CA)"
+    name: INSECURE_REGISTRY
+    value: "false"
+  -
+    description: "(Deprecated) If true, set up to use a second ES cluster for ops logs."
+    name: ENABLE_OPS_CLUSTER
+    value: "false"
+  -
+    description: "(Deprecated) External hostname where clients will reach kibana"
+    name: KIBANA_HOSTNAME
+    value: "kibana.example.com"
+  -
+    description: "(Deprecated) External hostname at which admins will visit the ops Kibana."
+    name: KIBANA_OPS_HOSTNAME
+    value: kibana-ops.example.com
+  -
+    description: "(Deprecated) External URL for the master, for OAuth purposes"
+    name: PUBLIC_MASTER_URL
+    value: "https://localhost:8443"
+  -
+    description: "(Deprecated) Internal URL for the master, for authentication retrieval"
+    name: MASTER_URL
+    value: "https://kubernetes.default.svc.cluster.local"
+  -
+    description: "(Deprecated) How many instances of ElasticSearch to deploy."
+    name: ES_CLUSTER_SIZE
+    value: "1"
+  -
+    description: "(Deprecated) Amount of RAM to reserve per ElasticSearch instance."
+    name: ES_INSTANCE_RAM
+    value: "8G"
+  -
+    description: "(Deprecated) Size of the PersistentVolumeClaim to create per ElasticSearch instance, e.g. 100G. If empty, no PVCs will be created and emptyDir volumes are used instead."
+    name: ES_PVC_SIZE
+  -
+    description: "(Deprecated) Prefix for the names of PersistentVolumeClaims to be created; a number will be appended per instance. If they don't already exist, they will be created with size ES_PVC_SIZE."
+    name: ES_PVC_PREFIX
+    value: "logging-es-"
+  -
+    description: '(Deprecated) Set to "true" to request dynamic provisioning (if enabled for your cluster) of a PersistentVolume for the ES PVC. '
+    name: ES_PVC_DYNAMIC
+  -
+    description: "(Deprecated) Number of nodes required to elect a master (ES minimum_master_nodes). By default, derived from ES_CLUSTER_SIZE / 2 + 1."
+    name: ES_NODE_QUORUM
+  -
+    description: "(Deprecated) Number of nodes required to be present before the cluster will recover from a full restart. By default, one fewer than ES_CLUSTER_SIZE."
+    name: ES_RECOVER_AFTER_NODES
+  -
+    description: "(Deprecated) Number of nodes desired to be present before the cluster will recover from a full restart. By default, ES_CLUSTER_SIZE."
+    name: ES_RECOVER_EXPECTED_NODES
+  -
+    description: "(Deprecated) Timeout for *expected* nodes to be present when cluster is recovering from a full restart."
+    name: ES_RECOVER_AFTER_TIME
+    value: "5m"
+  -
+    description: "(Deprecated) How many ops instances of ElasticSearch to deploy. By default, ES_CLUSTER_SIZE."
+    name: ES_OPS_CLUSTER_SIZE
+  -
+    description: "(Deprecated) Amount of RAM to reserve per ops ElasticSearch instance."
+    name: ES_OPS_INSTANCE_RAM
+    value: "8G"
+  -
+    description: "(Deprecated) Size of the PersistentVolumeClaim to create per ElasticSearch ops instance, e.g. 100G. If empty, no PVCs will be created and emptyDir volumes are used instead."
+    name: ES_OPS_PVC_SIZE
+  -
+    description: "(Deprecated) Prefix for the names of PersistentVolumeClaims to be created; a number will be appended per instance. If they don't already exist, they will be created with size ES_OPS_PVC_SIZE."
+    name: ES_OPS_PVC_PREFIX
+    value: "logging-es-ops-"
+  -
+    description: '(Deprecated) Set to "true" to request dynamic provisioning (if enabled for your cluster) of a PersistentVolume for the ES ops PVC. '
+    name: ES_OPS_PVC_DYNAMIC
+  -
+    description: "(Deprecated) Number of ops nodes required to elect a master (ES minimum_master_nodes). By default, derived from ES_CLUSTER_SIZE / 2 + 1."
+    name: ES_OPS_NODE_QUORUM
+  -
+    description: "(Deprecated) Number of ops nodes required to be present before the cluster will recover from a full restart. By default, one fewer than ES_OPS_CLUSTER_SIZE."
+    name: ES_OPS_RECOVER_AFTER_NODES
+  -
+    description: "(Deprecated) Number of ops nodes desired to be present before the cluster will recover from a full restart. By default, ES_OPS_CLUSTER_SIZE."
+    name: ES_OPS_RECOVER_EXPECTED_NODES
+  -
+    description: "(Deprecated) Timeout for *expected* ops nodes to be present when cluster is recovering from a full restart."
+    name: ES_OPS_RECOVER_AFTER_TIME
+    value: "5m"
+  -
+    description: "(Deprecated) The nodeSelector used for the Fluentd DaemonSet."
+    name: FLUENTD_NODESELECTOR
+    value: "logging-infra-fluentd=true"
+  -
+    description: "(Deprecated) Node selector Elasticsearch cluster (label=value)."
+    name: ES_NODESELECTOR
+    value: ""
+  -
+    description: "(Deprecated) Node selector Elasticsearch operations cluster (label=value)."
+    name: ES_OPS_NODESELECTOR
+    value: ""
+  -
+    description: "(Deprecated) Node selector Kibana cluster (label=value)."
+    name: KIBANA_NODESELECTOR
+    value: ""
+  -
+    description: "(Deprecated) Node selector Kibana operations cluster (label=value)."
+    name: KIBANA_OPS_NODESELECTOR
+    value: ""
+  -
+    description: "(Deprecated) Node selector Curator (label=value)."
+    name: CURATOR_NODESELECTOR
+    value: ""
+  -
+    description: "(Deprecated) Node selector operations Curator (label=value)."
+    name: CURATOR_OPS_NODESELECTOR
+    value: ""
+`)
+
+func examplesLoggingLoggingDeployerYamlBytes() ([]byte, error) {
+	return _examplesLoggingLoggingDeployerYaml, nil
+}
+
+func examplesLoggingLoggingDeployerYaml() (*asset, error) {
+	bytes, err := examplesLoggingLoggingDeployerYamlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "examples/logging/logging-deployer.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
 var _pkgImageAdmissionImagepolicyApiV1DefaultPolicyYaml = []byte(`kind: ImagePolicyConfig
 apiVersion: v1
 # To require that all images running on the platform be imported first, you may uncomment the
@@ -6872,12 +8548,16 @@ var _bindata = map[string]func() (*asset, error){
 	"examples/db-templates/postgresql-persistent-template.json": examplesDbTemplatesPostgresqlPersistentTemplateJson,
 	"examples/jenkins/jenkins-ephemeral-template.json": examplesJenkinsJenkinsEphemeralTemplateJson,
 	"examples/jenkins/jenkins-persistent-template.json": examplesJenkinsJenkinsPersistentTemplateJson,
-	"examples/jenkins/pipeline/samplepipeline.json": examplesJenkinsPipelineSamplepipelineJson,
+	"examples/jenkins/pipeline/bluegreen-pipeline.yaml": examplesJenkinsPipelineBluegreenPipelineYaml,
+	"examples/jenkins/pipeline/mapsapp-pipeline.yaml": examplesJenkinsPipelineMapsappPipelineYaml,
+	"examples/jenkins/pipeline/maven-pipeline.yaml": examplesJenkinsPipelineMavenPipelineYaml,
+	"examples/jenkins/pipeline/samplepipeline.yaml": examplesJenkinsPipelineSamplepipelineYaml,
 	"examples/quickstarts/cakephp-mysql.json": examplesQuickstartsCakephpMysqlJson,
 	"examples/quickstarts/dancer-mysql.json": examplesQuickstartsDancerMysqlJson,
 	"examples/quickstarts/django-postgresql.json": examplesQuickstartsDjangoPostgresqlJson,
 	"examples/quickstarts/nodejs-mongodb.json": examplesQuickstartsNodejsMongodbJson,
 	"examples/quickstarts/rails-postgresql.json": examplesQuickstartsRailsPostgresqlJson,
+	"examples/logging/logging-deployer.yaml": examplesLoggingLoggingDeployerYaml,
 	"pkg/image/admission/imagepolicy/api/v1/default-policy.yaml": pkgImageAdmissionImagepolicyApiV1DefaultPolicyYaml,
 }
 
@@ -6952,8 +8632,18 @@ var _bintree = &bintree{nil, map[string]*bintree{
 			"jenkins-persistent-template.json": &bintree{examplesJenkinsJenkinsPersistentTemplateJson, map[string]*bintree{
 			}},
 			"pipeline": &bintree{nil, map[string]*bintree{
-				"samplepipeline.json": &bintree{examplesJenkinsPipelineSamplepipelineJson, map[string]*bintree{
+				"bluegreen-pipeline.yaml": &bintree{examplesJenkinsPipelineBluegreenPipelineYaml, map[string]*bintree{
 				}},
+				"mapsapp-pipeline.yaml": &bintree{examplesJenkinsPipelineMapsappPipelineYaml, map[string]*bintree{
+				}},
+				"maven-pipeline.yaml": &bintree{examplesJenkinsPipelineMavenPipelineYaml, map[string]*bintree{
+				}},
+				"samplepipeline.yaml": &bintree{examplesJenkinsPipelineSamplepipelineYaml, map[string]*bintree{
+				}},
+			}},
+		}},
+		"logging": &bintree{nil, map[string]*bintree{
+			"logging-deployer.yaml": &bintree{examplesLoggingLoggingDeployerYaml, map[string]*bintree{
 			}},
 		}},
 		"quickstarts": &bintree{nil, map[string]*bintree{

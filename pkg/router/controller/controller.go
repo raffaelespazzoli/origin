@@ -28,6 +28,7 @@ type RouterController struct {
 
 	Plugin        router.Plugin
 	NextRoute     func() (watch.EventType, *routeapi.Route, error)
+	NextNode      func() (watch.EventType, *kapi.Node, error)
 	NextEndpoints func() (watch.EventType, *kapi.Endpoints, error)
 
 	RoutesListConsumed    func() bool
@@ -35,6 +36,13 @@ type RouterController struct {
 	routesListConsumed    bool
 	endpointsListConsumed bool
 	filteredByNamespace   bool
+
+	RoutesListSuccessfulAtLeastOnce    func() bool
+	EndpointsListSuccessfulAtLeastOnce func() bool
+	RoutesListCount                    func() int
+	EndpointsListCount                 func() int
+
+	WatchNodes bool
 
 	Namespaces            NamespaceLister
 	NamespaceSyncInterval time.Duration
@@ -51,6 +59,54 @@ func (c *RouterController) Run() {
 	}
 	go utilwait.Forever(c.HandleRoute, 0)
 	go utilwait.Forever(c.HandleEndpoints, 0)
+	if c.WatchNodes {
+		go utilwait.Forever(c.HandleNode, 0)
+	}
+	go c.watchForFirstSync()
+}
+
+// handleFirstSync signals the router when it sees that the various
+// watchers have successfully listed data from the api.
+func (c *RouterController) handleFirstSync() bool {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	synced := c.RoutesListSuccessfulAtLeastOnce() &&
+		c.EndpointsListSuccessfulAtLeastOnce() &&
+		(c.Namespaces == nil || c.filteredByNamespace)
+	if !synced {
+		return false
+	}
+
+	// If either of the event queues were empty after the initial
+	// List, the tracking listConsumed variable's default value of
+	// 'false' may prevent the router from reloading to indicate the
+	// readiness status.  Set the value to 'true' to ensure that a
+	// reload will be performed if necessary.
+	if c.RoutesListCount() == 0 {
+		c.routesListConsumed = true
+	}
+	if c.EndpointsListCount() == 0 {
+		c.endpointsListConsumed = true
+	}
+	c.updateLastSyncProcessed()
+
+	err := c.Plugin.SetSyncedAtLeastOnce()
+	if err == nil {
+		return true
+	}
+	utilruntime.HandleError(err)
+	return false
+}
+
+// watchForFirstSync loops until the first sync has been handled.
+func (c *RouterController) watchForFirstSync() {
+	for {
+		if c.handleFirstSync() {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 }
 
 func (c *RouterController) HandleNamespaces() {
@@ -76,6 +132,25 @@ func (c *RouterController) HandleNamespaces() {
 		time.Sleep(c.NamespaceWaitInterval)
 	}
 	glog.V(4).Infof("Unable to update list of namespaces")
+}
+
+// HandleNode handles a single Node event and synchronizes the router backend
+func (c *RouterController) HandleNode() {
+	eventType, node, err := c.NextNode()
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("unable to read nodes: %v", err))
+		return
+	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	glog.V(4).Infof("Processing Node : %s", node.Name)
+	glog.V(4).Infof("           Event: %s", eventType)
+
+	if err := c.Plugin.HandleNode(eventType, node); err != nil {
+		utilruntime.HandleError(err)
+	}
 }
 
 // HandleRoute handles a single Route event and synchronizes the router backend.

@@ -13,6 +13,9 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	kapps "k8s.io/kubernetes/pkg/apis/apps"
 	"k8s.io/kubernetes/pkg/apis/autoscaling"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	kautoscalingclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/autoscaling/unversioned"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	utilerrors "k8s.io/kubernetes/pkg/util/errors"
 	"k8s.io/kubernetes/pkg/util/sets"
@@ -48,7 +51,9 @@ const ForbiddenListWarning = "Forbidden"
 
 // ProjectStatusDescriber generates extended information about a Project
 type ProjectStatusDescriber struct {
-	K       kclient.Interface
+	// TODO internalclientset: get rid of oldClient after next rebase
+	OldK    kclient.Interface
+	K       kclientset.Interface
 	C       client.Interface
 	Server  string
 	Suggest bool
@@ -65,12 +70,13 @@ func (d *ProjectStatusDescriber) MakeGraph(namespace string) (osgraph.Graph, set
 	g := osgraph.New()
 
 	loaders := []GraphLoader{
-		&serviceLoader{namespace: namespace, lister: d.K},
-		&serviceAccountLoader{namespace: namespace, lister: d.K},
-		&secretLoader{namespace: namespace, lister: d.K},
-		&rcLoader{namespace: namespace, lister: d.K},
-		&podLoader{namespace: namespace, lister: d.K},
-		&petsetLoader{namespace: namespace, lister: d.K.Apps()},
+		&serviceLoader{namespace: namespace, lister: d.K.Core()},
+		&serviceAccountLoader{namespace: namespace, lister: d.K.Core()},
+		&secretLoader{namespace: namespace, lister: d.K.Core()},
+		&pvcLoader{namespace: namespace, lister: d.K.Core()},
+		&rcLoader{namespace: namespace, lister: d.K.Core()},
+		&podLoader{namespace: namespace, lister: d.K.Core()},
+		&petsetLoader{namespace: namespace, lister: d.OldK.Apps()},
 		&horizontalPodAutoscalerLoader{namespace: namespace, lister: d.K.Autoscaling()},
 		// TODO check swagger for feature enablement and selectively add bcLoader and buildLoader
 		// then remove errors.TolerateNotFoundError method.
@@ -93,6 +99,13 @@ func (d *ProjectStatusDescriber) MakeGraph(namespace string) (osgraph.Graph, set
 				forbiddenErr := err.(*kapierrors.StatusError)
 				if (forbiddenErr.Status().Details != nil) && (len(forbiddenErr.Status().Details.Kind) > 0) {
 					forbiddenResources.Insert(forbiddenErr.Status().Details.Kind)
+				}
+				continue
+			}
+			if kapierrors.IsNotFound(err) {
+				notfoundErr := err.(*kapierrors.StatusError)
+				if (notfoundErr.Status().Details != nil) && (len(notfoundErr.Status().Details.Kind) > 0) {
+					forbiddenResources.Insert(notfoundErr.Status().Details.Kind)
 				}
 				continue
 			}
@@ -119,6 +132,7 @@ func (d *ProjectStatusDescriber) MakeGraph(namespace string) (osgraph.Graph, set
 	buildedges.AddAllBuildEdges(g)
 	deployedges.AddAllTriggerEdges(g)
 	deployedges.AddAllDeploymentEdges(g)
+	deployedges.AddAllVolumeClaimEdges(g)
 	imageedges.AddAllImageStreamRefEdges(g)
 	imageedges.AddAllImageStreamImageRefEdges(g)
 	routeedges.AddAllRouteEdges(g)
@@ -140,7 +154,10 @@ func (d *ProjectStatusDescriber) Describe(namespace, name string) (string, error
 	if !allNamespaces {
 		p, err := d.C.Projects().Get(namespace)
 		if err != nil {
-			return "", err
+			if !kapierrors.IsNotFound(err) {
+				return "", err
+			}
+			p = &projectapi.Project{ObjectMeta: kapi.ObjectMeta{Name: namespace}}
 		}
 		project = p
 		f = namespacedFormatter{currentNamespace: namespace}
@@ -254,7 +271,7 @@ func (d *ProjectStatusDescriber) Describe(namespace, name string) (string, error
 
 		allMarkers := osgraph.Markers{}
 		allMarkers = append(allMarkers, createForbiddenMarkers(forbiddenResources)...)
-		for _, scanner := range getMarkerScanners(d.LogsCommandName, d.SecurityPolicyCommandFormat, d.SetProbeCommandName) {
+		for _, scanner := range getMarkerScanners(d.LogsCommandName, d.SecurityPolicyCommandFormat, d.SetProbeCommandName, forbiddenResources) {
 			allMarkers = append(allMarkers, scanner(g, f)...)
 		}
 
@@ -270,44 +287,31 @@ func (d *ProjectStatusDescriber) Describe(namespace, name string) (string, error
 		errorSuggestions := 0
 		if len(errorMarkers) > 0 {
 			fmt.Fprintln(out, "Errors:")
-			for _, marker := range errorMarkers {
-				fmt.Fprintln(out, indent+"* "+marker.Message)
-				if len(marker.Suggestion) > 0 {
-					errorSuggestions++
-					if d.Suggest {
-						switch s := marker.Suggestion.String(); {
-						case strings.Contains(s, "\n"):
-							fmt.Fprintln(out)
-							for _, line := range strings.Split(s, "\n") {
-								fmt.Fprintln(out, indent+"  "+line)
-							}
-						case len(s) > 0:
-							fmt.Fprintln(out, indent+"  try: "+s)
-						}
-					}
-				}
-			}
+			errorSuggestions += printMarkerSuggestions(errorMarkers, d.Suggest, out, indent)
 		}
 
 		warningMarkers := allMarkers.BySeverity(osgraph.WarningSeverity)
 		if len(warningMarkers) > 0 {
 			if d.Suggest {
+				// add linebreak between Errors list and Warnings list
+				if len(errorMarkers) > 0 {
+					fmt.Fprintln(out)
+				}
 				fmt.Fprintln(out, "Warnings:")
 			}
-			for _, marker := range warningMarkers {
-				if d.Suggest {
-					fmt.Fprintln(out, indent+"* "+marker.Message)
-					switch s := marker.Suggestion.String(); {
-					case strings.Contains(s, "\n"):
-						fmt.Fprintln(out)
-						for _, line := range strings.Split(s, "\n") {
-							fmt.Fprintln(out, indent+"  "+line)
-						}
-					case len(s) > 0:
-						fmt.Fprintln(out, indent+"  try: "+s)
-					}
+			printMarkerSuggestions(warningMarkers, d.Suggest, out, indent)
+		}
+
+		infoMarkers := allMarkers.BySeverity(osgraph.InfoSeverity)
+		if len(infoMarkers) > 0 {
+			if d.Suggest {
+				// add linebreak between Warnings list and Info List
+				if len(warningMarkers) > 0 || len(errorMarkers) > 0 {
+					fmt.Fprintln(out)
 				}
+				fmt.Fprintln(out, "Info:")
 			}
+			printMarkerSuggestions(infoMarkers, d.Suggest, out, indent)
 		}
 
 		// We print errors by default and warnings if -v is used. If we get none,
@@ -350,6 +354,32 @@ func (d *ProjectStatusDescriber) Describe(namespace, name string) (string, error
 	})
 }
 
+// printMarkerSuggestions prints a formatted list of marker suggestions
+// and returns the amount of suggestions printed
+func printMarkerSuggestions(markers []osgraph.Marker, suggest bool, out *tabwriter.Writer, indent string) int {
+	suggestionAmount := 0
+	for _, marker := range markers {
+		if len(marker.Suggestion) > 0 {
+			suggestionAmount++
+		}
+		if len(marker.Suggestion) > 0 || len(marker.Message) > 0 {
+			if suggest {
+				fmt.Fprintln(out, indent+"* "+marker.Message)
+				switch s := marker.Suggestion.String(); {
+				case strings.Contains(s, "\n"):
+					fmt.Fprintln(out)
+					for _, line := range strings.Split(s, "\n") {
+						fmt.Fprintln(out, indent+"  "+line)
+					}
+				case len(s) > 0:
+					fmt.Fprintln(out, indent+"  try: "+s)
+				}
+			}
+		}
+	}
+	return suggestionAmount
+}
+
 func createForbiddenMarkers(forbiddenResources sets.String) []osgraph.Marker {
 	markers := []osgraph.Marker{}
 	for forbiddenResource := range forbiddenResources {
@@ -362,13 +392,19 @@ func createForbiddenMarkers(forbiddenResources sets.String) []osgraph.Marker {
 	return markers
 }
 
-func getMarkerScanners(logsCommandName, securityPolicyCommandFormat, setProbeCommandName string) []osgraph.MarkerScanner {
+func getMarkerScanners(logsCommandName, securityPolicyCommandFormat, setProbeCommandName string, forbiddenResources sets.String) []osgraph.MarkerScanner {
 	return []osgraph.MarkerScanner{
 		func(g osgraph.Graph, f osgraph.Namer) []osgraph.Marker {
 			return kubeanalysis.FindRestartingPods(g, f, logsCommandName, securityPolicyCommandFormat)
 		},
 		kubeanalysis.FindDuelingReplicationControllers,
-		kubeanalysis.FindMissingSecrets,
+		func(g osgraph.Graph, f osgraph.Namer) []osgraph.Marker {
+			// do not attempt to add markers for missing secrets if dealing with forbidden errors
+			if forbiddenResources.Has("secrets") {
+				return []osgraph.Marker{}
+			}
+			return kubeanalysis.FindMissingSecrets(g, f)
+		},
 		kubeanalysis.FindHPASpecsMissingCPUTargets,
 		kubeanalysis.FindHPASpecsMissingScaleRefs,
 		kubeanalysis.FindOverlappingHPAs,
@@ -376,9 +412,13 @@ func getMarkerScanners(logsCommandName, securityPolicyCommandFormat, setProbeCom
 		buildanalysis.FindCircularBuilds,
 		buildanalysis.FindPendingTags,
 		deployanalysis.FindDeploymentConfigTriggerErrors,
+		deployanalysis.FindPersistentVolumeClaimWarnings,
 		buildanalysis.FindMissingInputImageStreams,
 		func(g osgraph.Graph, f osgraph.Namer) []osgraph.Marker {
 			return deployanalysis.FindDeploymentConfigReadinessWarnings(g, f, setProbeCommandName)
+		},
+		func(g osgraph.Graph, f osgraph.Namer) []osgraph.Marker {
+			return kubeanalysis.FindMissingLivenessProbes(g, f, setProbeCommandName)
 		},
 		routeanalysis.FindPortMappingIssues,
 		routeanalysis.FindMissingTLSTerminationType,
@@ -801,12 +841,37 @@ func describeAdditionalBuildDetail(build *buildgraph.BuildConfigNode, lastSucces
 		lastTime = passTime
 	}
 
+	var firstBuildToDisplay *buildgraph.BuildNode
+	firstTime := unversioned.Time{}
+	var secondBuildToDisplay *buildgraph.BuildNode
+	secondTime := unversioned.Time{}
+
 	// display the last successful build if specifically requested or we're going to display an active build for context
-	if lastSuccessfulBuild != nil && (includeSuccess || len(activeBuilds) > 0) {
-		out = append(out, describeBuildPhase(lastSuccessfulBuild.Build, &passTime, build.BuildConfig.Name, pushTargetResolved))
+	if includeSuccess || len(activeBuilds) > 0 {
+		if passTime.Before(failTime) {
+			firstBuildToDisplay = lastUnsuccessfulBuild
+			firstTime = failTime
+			secondBuildToDisplay = lastSuccessfulBuild
+			secondTime = passTime
+		} else {
+			firstBuildToDisplay = lastSuccessfulBuild
+			firstTime = passTime
+			secondBuildToDisplay = lastUnsuccessfulBuild
+			secondTime = failTime
+		}
+	} else {
+		// only display last unsuccessful if it is later than last successful
+		if passTime.Before(failTime) {
+			firstBuildToDisplay = lastUnsuccessfulBuild
+			firstTime = failTime
+		}
 	}
-	if passTime.Before(failTime) {
-		out = append(out, describeBuildPhase(lastUnsuccessfulBuild.Build, &failTime, build.BuildConfig.Name, pushTargetResolved))
+
+	if firstBuildToDisplay != nil {
+		out = append(out, describeBuildPhase(firstBuildToDisplay.Build, &firstTime, build.BuildConfig.Name, pushTargetResolved))
+	}
+	if secondBuildToDisplay != nil {
+		out = append(out, describeBuildPhase(secondBuildToDisplay.Build, &secondTime, build.BuildConfig.Name, pushTargetResolved))
 	}
 
 	if len(activeBuilds) > 0 {
@@ -973,52 +1038,53 @@ func describeDeployments(f formatter, dcNode *deploygraph.DeploymentConfigNode, 
 	return out
 }
 
-func describeDeploymentStatus(deploy *kapi.ReplicationController, first, test bool, restartCount int32) string {
-	timeAt := strings.ToLower(formatRelativeTime(deploy.CreationTimestamp.Time))
-	status := deployutil.DeploymentStatusFor(deploy)
-	version := deployutil.DeploymentVersionFor(deploy)
+func describeDeploymentStatus(rc *kapi.ReplicationController, first, test bool, restartCount int32) string {
+	timeAt := strings.ToLower(formatRelativeTime(rc.CreationTimestamp.Time))
+	status := deployutil.DeploymentStatusFor(rc)
+	version := deployutil.DeploymentVersionFor(rc)
 	maybeCancelling := ""
-	if deployutil.IsDeploymentCancelled(deploy) && !deployutil.IsTerminatedDeployment(deploy) {
+	if deployutil.IsDeploymentCancelled(rc) && !deployutil.IsTerminatedDeployment(rc) {
 		maybeCancelling = " (cancelling)"
 	}
 
 	switch status {
 	case deployapi.DeploymentStatusFailed:
-		reason := deployutil.DeploymentStatusReasonFor(deploy)
+		reason := deployutil.DeploymentStatusReasonFor(rc)
 		if len(reason) > 0 {
 			reason = fmt.Sprintf(": %s", reason)
 		}
 		// TODO: encode fail time in the rc
-		return fmt.Sprintf("deployment #%d failed %s ago%s%s", version, timeAt, reason, describePodSummaryInline(deploy.Status.Replicas, deploy.Spec.Replicas, false, restartCount))
+		return fmt.Sprintf("deployment #%d failed %s ago%s%s", version, timeAt, reason, describePodSummaryInline(rc.Status.ReadyReplicas, rc.Status.Replicas, rc.Spec.Replicas, false, restartCount))
 	case deployapi.DeploymentStatusComplete:
 		// TODO: pod status output
 		if test {
 			return fmt.Sprintf("test deployment #%d deployed %s ago", version, timeAt)
 		}
-		return fmt.Sprintf("deployment #%d deployed %s ago%s", version, timeAt, describePodSummaryInline(deploy.Status.Replicas, deploy.Spec.Replicas, first, restartCount))
+		return fmt.Sprintf("deployment #%d deployed %s ago%s", version, timeAt, describePodSummaryInline(rc.Status.ReadyReplicas, rc.Status.Replicas, rc.Spec.Replicas, first, restartCount))
 	case deployapi.DeploymentStatusRunning:
 		format := "deployment #%d running%s for %s%s"
 		if test {
 			format = "test deployment #%d running%s for %s%s"
 		}
-		return fmt.Sprintf(format, version, maybeCancelling, timeAt, describePodSummaryInline(deploy.Status.Replicas, deploy.Spec.Replicas, false, restartCount))
+		return fmt.Sprintf(format, version, maybeCancelling, timeAt, describePodSummaryInline(rc.Status.ReadyReplicas, rc.Status.Replicas, rc.Spec.Replicas, false, restartCount))
 	default:
-		return fmt.Sprintf("deployment #%d %s%s %s ago%s", version, strings.ToLower(string(status)), maybeCancelling, timeAt, describePodSummaryInline(deploy.Status.Replicas, deploy.Spec.Replicas, false, restartCount))
+		return fmt.Sprintf("deployment #%d %s%s %s ago%s", version, strings.ToLower(string(status)), maybeCancelling, timeAt, describePodSummaryInline(rc.Status.ReadyReplicas, rc.Status.Replicas, rc.Spec.Replicas, false, restartCount))
 	}
 }
 
 func describePetSetStatus(p *kapps.PetSet) string {
 	timeAt := strings.ToLower(formatRelativeTime(p.CreationTimestamp.Time))
-	return fmt.Sprintf("created %s ago%s", timeAt, describePodSummaryInline(int32(p.Status.Replicas), int32(p.Spec.Replicas), false, 0))
+	// TODO: Replace first argument in describePodSummaryInline with ReadyReplicas once that's a thing for pet sets.
+	return fmt.Sprintf("created %s ago%s", timeAt, describePodSummaryInline(int32(p.Status.Replicas), int32(p.Status.Replicas), int32(p.Spec.Replicas), false, 0))
 }
 
 func describeRCStatus(rc *kapi.ReplicationController) string {
 	timeAt := strings.ToLower(formatRelativeTime(rc.CreationTimestamp.Time))
-	return fmt.Sprintf("rc/%s created %s ago%s", rc.Name, timeAt, describePodSummaryInline(rc.Status.Replicas, rc.Spec.Replicas, false, 0))
+	return fmt.Sprintf("rc/%s created %s ago%s", rc.Name, timeAt, describePodSummaryInline(rc.Status.ReadyReplicas, rc.Status.Replicas, rc.Spec.Replicas, false, 0))
 }
 
-func describePodSummaryInline(actual, requested int32, includeEmpty bool, restartCount int32) string {
-	s := describePodSummary(actual, requested, includeEmpty, restartCount)
+func describePodSummaryInline(ready, actual, requested int32, includeEmpty bool, restartCount int32) string {
+	s := describePodSummary(ready, requested, includeEmpty, restartCount)
 	if len(s) == 0 {
 		return s
 	}
@@ -1032,25 +1098,25 @@ func describePodSummaryInline(actual, requested int32, includeEmpty bool, restar
 	return fmt.Sprintf(" - %s%s", s, change)
 }
 
-func describePodSummary(actual, requested int32, includeEmpty bool, restartCount int32) string {
+func describePodSummary(ready, requested int32, includeEmpty bool, restartCount int32) string {
 	var restartWarn string
 	if restartCount > 0 {
 		restartWarn = fmt.Sprintf(" (warning: %d restarts)", restartCount)
 	}
-	if actual == requested {
+	if ready == requested {
 		switch {
-		case actual == 0:
+		case ready == 0:
 			if !includeEmpty {
 				return ""
 			}
 			return "0 pods"
-		case actual > 1:
-			return fmt.Sprintf("%d pods", actual) + restartWarn
+		case ready > 1:
+			return fmt.Sprintf("%d pods", ready) + restartWarn
 		default:
 			return "1 pod" + restartWarn
 		}
 	}
-	return fmt.Sprintf("%d/%d pods", actual, requested) + restartWarn
+	return fmt.Sprintf("%d/%d pods", ready, requested) + restartWarn
 }
 
 func describeDeploymentConfigTriggers(config *deployapi.DeploymentConfig) (string, bool) {
@@ -1170,7 +1236,7 @@ type GraphLoader interface {
 
 type rcLoader struct {
 	namespace string
-	lister    kclient.ReplicationControllersNamespacer
+	lister    kcoreclient.ReplicationControllersGetter
 	items     []kapi.ReplicationController
 }
 
@@ -1194,7 +1260,7 @@ func (l *rcLoader) AddToGraph(g osgraph.Graph) error {
 
 type serviceLoader struct {
 	namespace string
-	lister    kclient.ServicesNamespacer
+	lister    kcoreclient.ServicesGetter
 	items     []kapi.Service
 }
 
@@ -1218,7 +1284,7 @@ func (l *serviceLoader) AddToGraph(g osgraph.Graph) error {
 
 type podLoader struct {
 	namespace string
-	lister    kclient.PodsNamespacer
+	lister    kcoreclient.PodsGetter
 	items     []kapi.Pod
 }
 
@@ -1266,7 +1332,7 @@ func (l *petsetLoader) AddToGraph(g osgraph.Graph) error {
 
 type horizontalPodAutoscalerLoader struct {
 	namespace string
-	lister    kclient.HorizontalPodAutoscalersNamespacer
+	lister    kautoscalingclient.HorizontalPodAutoscalersGetter
 	items     []autoscaling.HorizontalPodAutoscaler
 }
 
@@ -1290,7 +1356,7 @@ func (l *horizontalPodAutoscalerLoader) AddToGraph(g osgraph.Graph) error {
 
 type serviceAccountLoader struct {
 	namespace string
-	lister    kclient.ServiceAccountsNamespacer
+	lister    kcoreclient.ServiceAccountsGetter
 	items     []kapi.ServiceAccount
 }
 
@@ -1314,7 +1380,7 @@ func (l *serviceAccountLoader) AddToGraph(g osgraph.Graph) error {
 
 type secretLoader struct {
 	namespace string
-	lister    kclient.SecretsNamespacer
+	lister    kcoreclient.SecretsGetter
 	items     []kapi.Secret
 }
 
@@ -1331,6 +1397,30 @@ func (l *secretLoader) Load() error {
 func (l *secretLoader) AddToGraph(g osgraph.Graph) error {
 	for i := range l.items {
 		kubegraph.EnsureSecretNode(g, &l.items[i])
+	}
+
+	return nil
+}
+
+type pvcLoader struct {
+	namespace string
+	lister    kcoreclient.PersistentVolumeClaimsGetter
+	items     []kapi.PersistentVolumeClaim
+}
+
+func (l *pvcLoader) Load() error {
+	list, err := l.lister.PersistentVolumeClaims(l.namespace).List(kapi.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	l.items = list.Items
+	return nil
+}
+
+func (l *pvcLoader) AddToGraph(g osgraph.Graph) error {
+	for i := range l.items {
+		kubegraph.EnsurePersistentVolumeClaimNode(g, &l.items[i])
 	}
 
 	return nil

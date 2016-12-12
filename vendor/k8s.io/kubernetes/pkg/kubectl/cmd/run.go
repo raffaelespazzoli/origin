@@ -177,6 +177,22 @@ func Run(f *cmdutil.Factory, opts *RunOptions, cmdIn io.Reader, cmdOut, cmdErr i
 		return cmdutil.UsageError(cmd, fmt.Sprintf("--restart=%s requires that --replicas=1, found %d", restartPolicy, replicas))
 	}
 
+	attachFlag := cmd.Flags().Lookup("attach")
+	attach := cmdutil.GetFlagBool(cmd, "attach")
+
+	if !attachFlag.Changed && interactive {
+		attach = true
+	}
+
+	remove := cmdutil.GetFlagBool(cmd, "rm")
+	if !attach && remove {
+		return cmdutil.UsageError(cmd, "--rm should only be used for attached containers")
+	}
+
+	if attach && cmdutil.GetDryRunFlag(cmd) {
+		return cmdutil.UsageError(cmd, "--dry-run can't be used with attached containers options (--attach, --stdin, or --tty)")
+	}
+
 	if err := verifyImagePullPolicy(cmd); err != nil {
 		return err
 	}
@@ -250,18 +266,6 @@ func Run(f *cmdutil.Factory, opts *RunOptions, cmdIn io.Reader, cmdOut, cmdErr i
 		if err := generateService(f, cmd, args, serviceGenerator, params, namespace, cmdOut); err != nil {
 			return err
 		}
-	}
-
-	attachFlag := cmd.Flags().Lookup("attach")
-	attach := cmdutil.GetFlagBool(cmd, "attach")
-
-	if !attachFlag.Changed && interactive {
-		attach = true
-	}
-
-	remove := cmdutil.GetFlagBool(cmd, "rm")
-	if !attach && remove {
-		return cmdutil.UsageError(cmd, "--rm should only be used for attached containers")
 	}
 
 	if attach {
@@ -365,7 +369,7 @@ func Run(f *cmdutil.Factory, opts *RunOptions, cmdIn io.Reader, cmdOut, cmdErr i
 	if outputFormat != "" || cmdutil.GetDryRunFlag(cmd) {
 		return f.PrintObject(cmd, mapper, obj, cmdOut)
 	}
-	cmdutil.PrintSuccess(mapper, false, cmdOut, mapping.Resource, args[0], "created")
+	cmdutil.PrintSuccess(mapper, false, cmdOut, mapping.Resource, args[0], cmdutil.GetDryRunFlag(cmd), "created")
 	return nil
 }
 
@@ -589,7 +593,7 @@ func generateService(f *cmdutil.Factory, cmd *cobra.Command, args []string, serv
 	if cmdutil.GetFlagString(cmd, "output") != "" || cmdutil.GetDryRunFlag(cmd) {
 		return f.PrintObject(cmd, mapper, obj, out)
 	}
-	cmdutil.PrintSuccess(mapper, false, out, mapping.Resource, args[0], "created")
+	cmdutil.PrintSuccess(mapper, false, out, mapping.Resource, args[0], cmdutil.GetDryRunFlag(cmd), "created")
 
 	return nil
 }

@@ -42,13 +42,7 @@ type BuildConfigController struct {
 func (c *BuildConfigController) HandleBuildConfig(bc *buildapi.BuildConfig) error {
 	glog.V(4).Infof("Handling BuildConfig %s/%s", bc.Namespace, bc.Name)
 
-	hasChangeTrigger := false
-	for _, trigger := range bc.Spec.Triggers {
-		if trigger.Type == buildapi.ConfigChangeBuildTriggerType {
-			hasChangeTrigger = true
-			break
-		}
-	}
+	hasChangeTrigger := buildapi.HasTriggerType(buildapi.ConfigChangeBuildTriggerType, bc)
 
 	if !hasChangeTrigger {
 		return nil
@@ -66,7 +60,7 @@ func (c *BuildConfigController) HandleBuildConfig(bc *buildapi.BuildConfig) erro
 	request := &buildapi.BuildRequest{
 		TriggeredBy: append(buildTriggerCauses,
 			buildapi.BuildTriggerCause{
-				Message: "Build configuration change",
+				Message: buildapi.BuildTriggerCauseConfigMsg,
 			}),
 		ObjectMeta: kapi.ObjectMeta{
 			Name:      bc.Name,
@@ -83,6 +77,7 @@ func (c *BuildConfigController) HandleBuildConfig(bc *buildapi.BuildConfig) erro
 			return &ConfigControllerFatalError{err.Error()}
 		} else {
 			instantiateErr = fmt.Errorf("error instantiating Build from BuildConfig %s/%s: %v", bc.Namespace, bc.Name, err)
+			c.Recorder.Event(bc, kapi.EventTypeWarning, "BuildConfigInstantiateFailed", instantiateErr.Error())
 			utilruntime.HandleError(instantiateErr)
 		}
 		return instantiateErr

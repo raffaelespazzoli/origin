@@ -21,6 +21,7 @@ import (
 
 	"github.com/openshift/origin/pkg/client"
 	"github.com/openshift/origin/pkg/cmd/cli/describe"
+	"github.com/openshift/origin/pkg/cmd/templates"
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 	deployapi "github.com/openshift/origin/pkg/deploy/api"
 	deployutil "github.com/openshift/origin/pkg/deploy/util"
@@ -43,52 +44,53 @@ type DeployOptions struct {
 	follow               bool
 }
 
-const (
-	deployLong = `
-View, start, cancel, or retry a deployment
+var (
+	deployLong = templates.LongDesc(`
+		View, start, cancel, or retry a deployment
 
-This command allows you to control a deployment config. Each individual deployment is exposed
-as a new replication controller, and the deployment process manages scaling down old deployments
-and scaling up new ones. Use '%[1]s rollback' to rollback to any previous deployment.
+		This command allows you to control a deployment config. Each individual deployment is exposed
+		as a new replication controller, and the deployment process manages scaling down old deployments
+		and scaling up new ones. Use '%[1]s rollback' to rollback to any previous deployment.
 
-There are several deployment strategies defined:
+		There are several deployment strategies defined:
 
-* Rolling (default) - scales up the new deployment in stages, gradually reducing the number
-  of old deployments. If one of the new deployed pods never becomes "ready", the new deployment
-  will be rolled back (scaled down to zero). Use when your application can tolerate two versions
-  of code running at the same time (many web applications, scalable databases)
-* Recreate - scales the old deployment down to zero, then scales the new deployment up to full.
-  Use when your application cannot tolerate two versions of code running at the same time
-* Custom - run your own deployment process inside a Docker container using your own scripts.
+		* Rolling (default) - scales up the new deployment in stages, gradually reducing the number
+		  of old deployments. If one of the new deployed pods never becomes "ready", the new deployment
+		  will be rolled back (scaled down to zero). Use when your application can tolerate two versions
+		  of code running at the same time (many web applications, scalable databases)
+		* Recreate - scales the old deployment down to zero, then scales the new deployment up to full.
+		  Use when your application cannot tolerate two versions of code running at the same time
+		* Custom - run your own deployment process inside a Docker container using your own scripts.
 
-If a deployment fails, you may opt to retry it (if the error was transient). Some deployments may
-never successfully complete - in which case you can use the '--latest' flag to force a redeployment.
-If a deployment config has completed deploying successfully at least once in the past, it would be
-automatically rolled back in the event of a new failed deployment. Note that you would still need
-to update the erroneous deployment config in order to have its template persisted across your
-application.
+		If a deployment fails, you may opt to retry it (if the error was transient). Some deployments may
+		never successfully complete - in which case you can use the '--latest' flag to force a redeployment.
+		If a deployment config has completed deploying successfully at least once in the past, it would be
+		automatically rolled back in the event of a new failed deployment. Note that you would still need
+		to update the erroneous deployment config in order to have its template persisted across your
+		application.
 
-If you want to cancel a running deployment, use '--cancel' but keep in mind that this is a best-effort
-operation and may take some time to complete. It’s possible the deployment will partially or totally
-complete before the cancellation is effective. In such a case an appropriate event will be emitted.
+		If you want to cancel a running deployment, use '--cancel' but keep in mind that this is a best-effort
+		operation and may take some time to complete. It’s possible the deployment will partially or totally
+		complete before the cancellation is effective. In such a case an appropriate event will be emitted.
 
-If no options are given, shows information about the latest deployment.`
+		If no options are given, shows information about the latest deployment.`)
 
-	deployExample = `  # Display the latest deployment for the 'database' deployment config
-  %[1]s deploy database
+	deployExample = templates.Examples(`
+		# Display the latest deployment for the 'database' deployment config
+	  %[1]s deploy database
 
-  # Start a new deployment based on the 'database'
-  %[1]s deploy database --latest
+	  # Start a new deployment based on the 'database'
+	  %[1]s deploy database --latest
 
-  # Start a new deployment and follow its log
-  %[1]s deploy database --latest --follow
+	  # Start a new deployment and follow its log
+	  %[1]s deploy database --latest --follow
 
-  # Retry the latest failed deployment based on 'frontend'
-  # The deployer pod and any hook pods are deleted for the latest failed deployment
-  %[1]s deploy frontend --retry
+	  # Retry the latest failed deployment based on 'frontend'
+	  # The deployer pod and any hook pods are deleted for the latest failed deployment
+	  %[1]s deploy frontend --retry
 
-  # Cancel the in-progress deployment based on 'frontend'
-  %[1]s deploy frontend --cancel`
+	  # Cancel the in-progress deployment based on 'frontend'
+	  %[1]s deploy frontend --cancel`)
 )
 
 // NewCmdDeploy creates a new `deploy` command.
@@ -119,9 +121,12 @@ func NewCmdDeploy(fullName string, f *clientcmd.Factory, out io.Writer) *cobra.C
 	}
 
 	cmd.Flags().BoolVar(&options.deployLatest, "latest", false, "Start a new deployment now.")
+	cmd.Flags().MarkDeprecated("latest", fmt.Sprintf("use '%s rollout latest' instead", fullName))
 	cmd.Flags().BoolVar(&options.retryDeploy, "retry", false, "Retry the latest failed deployment.")
 	cmd.Flags().BoolVar(&options.cancelDeploy, "cancel", false, "Cancel the in-progress deployment.")
+	cmd.Flags().MarkDeprecated("cancel", fmt.Sprintf("use '%s rollout cancel' instead", fullName))
 	cmd.Flags().BoolVar(&options.enableTriggers, "enable-triggers", false, "Enables all image triggers for the deployment config.")
+	cmd.Flags().MarkDeprecated("enable-triggers", fmt.Sprintf("use '%s set triggers' instead", fullName))
 	cmd.Flags().BoolVar(&options.follow, "follow", false, "Follow the logs of a deployment")
 
 	return cmd
@@ -133,7 +138,7 @@ func (o *DeployOptions) Complete(f *clientcmd.Factory, args []string, out io.Wri
 	}
 	var err error
 
-	o.osClient, o.kubeClient, err = f.Clients()
+	o.osClient, o.kubeClient, _, err = f.Clients()
 	if err != nil {
 		return err
 	}
@@ -238,16 +243,30 @@ func (o DeployOptions) deploy(config *deployapi.DeploymentConfig) error {
 	deployment, err := o.kubeClient.ReplicationControllers(config.Namespace).Get(deploymentName)
 	if err == nil && !deployutil.IsTerminatedDeployment(deployment) {
 		// Reject attempts to start a concurrent deployment.
-		return fmt.Errorf("#%d is already in progress (%s).\nOptionally, you can cancel this deployment using the --cancel option.",
-			config.Status.LatestVersion, deployutil.DeploymentStatusFor(deployment))
+		return fmt.Errorf("#%d is already in progress (%s).\nOptionally, you can cancel this deployment using 'oc rollout cancel dc/%s'.",
+			config.Status.LatestVersion, deployutil.DeploymentStatusFor(deployment), deployment.Name)
 	}
 	if err != nil && !kerrors.IsNotFound(err) {
 		return err
 	}
 
-	config.Status.LatestVersion++
-	dc, err := o.osClient.DeploymentConfigs(config.Namespace).Update(config)
+	request := &deployapi.DeploymentRequest{
+		Name:   config.Name,
+		Latest: false,
+		Force:  true,
+	}
+
+	dc, err := o.osClient.DeploymentConfigs(config.Namespace).Instantiate(request)
+	// Pre 1.4 servers don't support the instantiate endpoint. Fallback to incrementing
+	// latestVersion on them.
+	if kerrors.IsNotFound(err) || kerrors.IsForbidden(err) {
+		config.Status.LatestVersion++
+		dc, err = o.osClient.DeploymentConfigs(config.Namespace).Update(config)
+	}
 	if err != nil {
+		if kerrors.IsBadRequest(err) {
+			err = fmt.Errorf("%v - try 'oc rollout latest dc/%s'", err, config.Name)
+		}
 		return err
 	}
 	fmt.Fprintf(o.out, "Started deployment #%d\n", dc.Status.LatestVersion)
@@ -287,7 +306,7 @@ func (o DeployOptions) retry(config *deployapi.DeploymentConfig) error {
 		if deployutil.IsCompleteDeployment(deployment) {
 			message += fmt.Sprintf("You can start a new deployment with 'oc deploy --latest dc/%s'.", config.Name)
 		} else {
-			message += fmt.Sprintf("Optionally, you can cancel this deployment with 'oc deploy --cancel dc/%s'.", config.Name)
+			message += fmt.Sprintf("Optionally, you can cancel this deployment with 'oc rollout cancel dc/%s'.", config.Name)
 		}
 
 		return fmt.Errorf(message)
@@ -322,6 +341,7 @@ func (o DeployOptions) retry(config *deployapi.DeploymentConfig) error {
 }
 
 // cancel cancels any deployment process in progress for config.
+// TODO: this code will be deprecated
 func (o DeployOptions) cancel(config *deployapi.DeploymentConfig) error {
 	if config.Spec.Paused {
 		return fmt.Errorf("cannot cancel a paused deployment config")

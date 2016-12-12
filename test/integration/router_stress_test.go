@@ -7,7 +7,7 @@ import (
 	"time"
 
 	kapi "k8s.io/kubernetes/pkg/api"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/util/sets"
 	"k8s.io/kubernetes/pkg/watch"
 
@@ -56,7 +56,7 @@ func stressRouter(t *testing.T, namespaceCount, routesPerNamespace, routerCount,
 
 		// Create a namespace
 		namespaceProperties := createNamespaceProperties()
-		namespace, err := kc.Namespaces().Create(namespaceProperties)
+		namespace, err := kc.Core().Namespaces().Create(namespaceProperties)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -65,14 +65,14 @@ func stressRouter(t *testing.T, namespaceCount, routesPerNamespace, routerCount,
 
 			// Create a service for the route
 			serviceProperties := createServiceProperties()
-			service, err := kc.Services(namespace.Name).Create(serviceProperties)
+			service, err := kc.Core().Services(namespace.Name).Create(serviceProperties)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
 			// Create endpoints
 			endpointsProperties := createEndpointsProperties(service.Name)
-			_, err = kc.Endpoints(namespace.Name).Create(endpointsProperties)
+			_, err = kc.Core().Endpoints(namespace.Name).Create(endpointsProperties)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -194,7 +194,7 @@ func createRouteProperties(serviceName string) *routeapi.Route {
 
 // launchAPI launches an api server and returns clients configured to
 // access it.
-func launchApi() (osclient.Interface, kclient.Interface, error) {
+func launchApi() (osclient.Interface, kclientset.Interface, error) {
 	_, clusterAdminKubeConfig, err := testserver.StartTestMasterAPI()
 	if err != nil {
 		return nil, nil, err
@@ -238,6 +238,11 @@ func (p *DelayPlugin) HandleRoute(eventType watch.EventType, route *routeapi.Rou
 	return p.plugin.HandleRoute(eventType, route)
 }
 
+func (p *DelayPlugin) HandleNode(eventType watch.EventType, node *kapi.Node) error {
+	p.delay()
+	return p.plugin.HandleNode(eventType, node)
+}
+
 func (p *DelayPlugin) HandleEndpoints(eventType watch.EventType, endpoints *kapi.Endpoints) error {
 	p.delay()
 	return p.plugin.HandleEndpoints(eventType, endpoints)
@@ -252,9 +257,13 @@ func (p *DelayPlugin) SetLastSyncProcessed(processed bool) error {
 	return p.plugin.SetLastSyncProcessed(processed)
 }
 
+func (p *DelayPlugin) SetSyncedAtLeastOnce() error {
+	return p.plugin.SetSyncedAtLeastOnce()
+}
+
 // launchRouter launches a template router that communicates with the
 // api via the provided clients.
-func launchRouter(oc osclient.Interface, kc kclient.Interface, maxDelay int32, name string, reloadInterval int, reloadCounts map[string]int) (templatePlugin *templateplugin.TemplatePlugin) {
+func launchRouter(oc osclient.Interface, kc kclientset.Interface, maxDelay int32, name string, reloadInterval int, reloadCounts map[string]int) (templatePlugin *templateplugin.TemplatePlugin) {
 	r := templateplugin.NewFakeTemplateRouter()
 
 	reloadCounts[name] = 0
@@ -277,7 +286,7 @@ func launchRouter(oc osclient.Interface, kc kclient.Interface, maxDelay int32, n
 	}
 
 	factory := controllerfactory.NewDefaultRouterControllerFactory(oc, kc)
-	controller := factory.Create(plugin)
+	controller := factory.Create(plugin, false)
 	controller.Run()
 
 	return

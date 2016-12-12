@@ -105,7 +105,11 @@ assetConfig:
     namedCertificates: null
     requestTimeoutSeconds: 0
 auditConfig:
+  auditFilePath: ""
   enabled: false
+  maximumFileRetentionDays: 0
+  maximumFileSizeMegabytes: 0
+  maximumRetainedFiles: 0
 controllerConfig:
   serviceServingCert:
     signer: null
@@ -319,6 +323,7 @@ oauthConfig:
       clientSecret: ""
       kind: GitHubIdentityProvider
       organizations: null
+      teams: null
   - challenge: false
     login: false
     mappingMethod: ""
@@ -333,6 +338,7 @@ oauthConfig:
         value: ""
       kind: GitHubIdentityProvider
       organizations: null
+      teams: null
   - challenge: false
     login: false
     mappingMethod: ""

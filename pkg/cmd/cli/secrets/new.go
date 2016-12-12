@@ -10,39 +10,40 @@ import (
 	"strings"
 
 	kapi "k8s.io/kubernetes/pkg/api"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	kcmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	kvalidation "k8s.io/kubernetes/pkg/util/validation"
 
+	"github.com/openshift/origin/pkg/cmd/templates"
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 	"github.com/spf13/cobra"
 )
 
-const (
-	NewSecretRecommendedCommandName = "new"
+const NewSecretRecommendedCommandName = "new"
 
-	newLong = `
-Create a new secret based on a file or directory
+var (
+	newLong = templates.LongDesc(`
+    Create a new secret based on a file or directory
 
-Key files can be specified using their file path, in which case a default name will be given to them, or optionally
-with a name and file path, in which case the given name will be used. Specifying a directory will create a secret
-using with all valid keys in that directory.
-`
+    Key files can be specified using their file path, in which case a default name will be given to them, or optionally
+    with a name and file path, in which case the given name will be used. Specifying a directory will create a secret
+    using with all valid keys in that directory.`)
 
-	newExample = `  # Create a new secret named my-secret with a key named ssh-privatekey
-  %[1]s my-secret ~/.ssh/ssh-privatekey
+	newExample = templates.Examples(`
+    # Create a new secret named my-secret with a key named ssh-privatekey
+    %[1]s my-secret ~/.ssh/ssh-privatekey
 
-  # Create a new secret named my-secret with keys named ssh-privatekey and ssh-publickey instead of the names of the keys on disk
-  %[1]s my-secret ssh-privatekey=~/.ssh/id_rsa ssh-publickey=~/.ssh/id_rsa.pub
+    # Create a new secret named my-secret with keys named ssh-privatekey and ssh-publickey instead of the names of the keys on disk
+    %[1]s my-secret ssh-privatekey=~/.ssh/id_rsa ssh-publickey=~/.ssh/id_rsa.pub
 
-  # Create a new secret named my-secret with keys for each file in the folder "bar"
-  %[1]s my-secret path/to/bar
+    # Create a new secret named my-secret with keys for each file in the folder "bar"
+    %[1]s my-secret path/to/bar
 
-  # Create a new .dockercfg secret named my-secret
-  %[1]s my-secret path/to/.dockercfg
+    # Create a new .dockercfg secret named my-secret
+    %[1]s my-secret path/to/.dockercfg
 
-  # Create a new .docker/config.json secret named my-secret
-  %[1]s my-secret .dockerconfigjson=path/to/.docker/config.json`
+    # Create a new .docker/config.json secret named my-secret
+    %[1]s my-secret .dockerconfigjson=path/to/.docker/config.json`)
 )
 
 type CreateSecretOptions struct {
@@ -56,7 +57,7 @@ type CreateSecretOptions struct {
 	// Directory sources are listed and any direct file children included (but subfolders are not traversed)
 	Sources []string
 
-	SecretsInterface kclient.SecretsInterface
+	SecretsInterface kcoreclient.SecretInterface
 
 	// Writer to write warnings to
 	Stderr io.Writer
@@ -128,7 +129,7 @@ func (o *CreateSecretOptions) Complete(args []string, f *clientcmd.Factory) erro
 	}
 
 	if f != nil {
-		_, kubeClient, err := f.Clients()
+		_, _, kubeClient, err := f.Clients()
 		if err != nil {
 			return err
 		}
@@ -136,7 +137,7 @@ func (o *CreateSecretOptions) Complete(args []string, f *clientcmd.Factory) erro
 		if err != nil {
 			return err
 		}
-		o.SecretsInterface = kubeClient.Secrets(namespace)
+		o.SecretsInterface = kubeClient.Core().Secrets(namespace)
 	}
 
 	return nil

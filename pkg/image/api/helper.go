@@ -18,6 +18,8 @@ import (
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/golang/glog"
+
+	"github.com/openshift/origin/pkg/image/reference"
 )
 
 const (
@@ -33,6 +35,9 @@ const (
 	// containerImageEntrypointAnnotationFormatKey is a format used to identify the entrypoint of a particular
 	// container in a pod template. It is a JSON array of strings.
 	containerImageEntrypointAnnotationFormatKey = "openshift.io/container.%s.image.entrypoint"
+
+	// TagReferenceAnnotationTagHidden indicates that a given TagReference is hidden from search results
+	TagReferenceAnnotationTagHidden = "hidden"
 )
 
 // DefaultRegistry returns the default Docker registry (host or host:port), or false if it is not available.
@@ -46,24 +51,6 @@ type DefaultRegistryFunc func() (string, bool)
 // DefaultRegistry implements the DefaultRegistry interface for a function.
 func (fn DefaultRegistryFunc) DefaultRegistry() (string, bool) {
 	return fn()
-}
-
-// parseRepositoryTag splits a string into its name component and either tag or id if present.
-// TODO remove
-func parseRepositoryTag(repos string) (base string, tag string, id string) {
-	n := strings.Index(repos, "@")
-	if n >= 0 {
-		parts := strings.Split(repos, "@")
-		return parts[0], "", parts[1]
-	}
-	n = strings.LastIndex(repos, ":")
-	if n < 0 {
-		return repos, "", ""
-	}
-	if tag := repos[n+1:]; !strings.Contains(tag, "/") {
-		return repos[:n], tag, ""
-	}
-	return repos, "", ""
 }
 
 // ParseImageStreamImageName splits a string into its name component and ID component, and returns an error
@@ -109,16 +96,6 @@ func MakeImageStreamImageName(name, id string) string {
 	return fmt.Sprintf("%s@%s", name, id)
 }
 
-func isRegistryName(str string) bool {
-	switch {
-	case strings.Contains(str, ":"),
-		strings.Contains(str, "."),
-		str == "localhost":
-		return true
-	}
-	return false
-}
-
 // IsRegistryDockerHub returns true if the given registry name belongs to
 // Docker hub.
 func IsRegistryDockerHub(registry string) bool {
@@ -134,59 +111,17 @@ func IsRegistryDockerHub(registry string) bool {
 // DockerImageReference.
 func ParseDockerImageReference(spec string) (DockerImageReference, error) {
 	var ref DockerImageReference
-	// TODO replace with docker version once docker/docker PR11109 is merged upstream
-	stream, tag, id := parseRepositoryTag(spec)
 
-	repoParts := strings.Split(stream, "/")
-	switch len(repoParts) {
-	case 2:
-		if isRegistryName(repoParts[0]) {
-			// registry/name
-			ref.Registry = repoParts[0]
-			if IsRegistryDockerHub(ref.Registry) {
-				ref.Namespace = DockerDefaultNamespace
-			}
-			if len(repoParts[1]) == 0 {
-				return ref, fmt.Errorf("the docker pull spec %q must be two or three segments separated by slashes", spec)
-			}
-			ref.Name = repoParts[1]
-			ref.Tag = tag
-			ref.ID = id
-			break
-		}
-		// namespace/name
-		ref.Namespace = repoParts[0]
-		if len(repoParts[1]) == 0 {
-			return ref, fmt.Errorf("the docker pull spec %q must be two or three segments separated by slashes", spec)
-		}
-		ref.Name = repoParts[1]
-		ref.Tag = tag
-		ref.ID = id
-		break
-	case 3:
-		// registry/namespace/name
-		ref.Registry = repoParts[0]
-		ref.Namespace = repoParts[1]
-		if len(repoParts[2]) == 0 {
-			return ref, fmt.Errorf("the docker pull spec %q must be two or three segments separated by slashes", spec)
-		}
-		ref.Name = repoParts[2]
-		ref.Tag = tag
-		ref.ID = id
-		break
-	case 1:
-		// name
-		if len(repoParts[0]) == 0 {
-			return ref, fmt.Errorf("the docker pull spec %q must be two or three segments separated by slashes", spec)
-		}
-		ref.Name = repoParts[0]
-		ref.Tag = tag
-		ref.ID = id
-		break
-	default:
-		// TODO: this is no longer true with V2
-		return ref, fmt.Errorf("the docker pull spec %q must be two or three segments separated by slashes", spec)
+	namedRef, err := reference.ParseNamedDockerImageReference(spec)
+	if err != nil {
+		return ref, err
 	}
+
+	ref.Registry = namedRef.Registry
+	ref.Namespace = namedRef.Namespace
+	ref.Name = namedRef.Name
+	ref.Tag = namedRef.Tag
+	ref.ID = namedRef.ID
 
 	return ref, nil
 }
@@ -926,17 +861,17 @@ func LatestObservedTagGeneration(stream *ImageStream, tag string) int64 {
 }
 
 var (
-	reMajorSemantic = regexp.MustCompile(`^[\d]+$`)
-	reMinorSemantic = regexp.MustCompile(`^[\d]+\.[\d]+$`)
+	reMinorSemantic    = regexp.MustCompile(`^[\d]+\.[\d]+$`)
+	reMinorReplacement = regexp.MustCompile(`[\d]+\.[\d]+`)
+	reMinorWithPatch   = regexp.MustCompile(`^[\d]+\.[\d]+-\w+$`)
 )
 
 // PrioritizeTags orders a set of image tags with a few conventions:
 //
 // 1. the "latest" tag, if present, should be first
-// 2. any tags that represent a semantic major version ("5", "v5") should be next, in descending order
-// 3. any tags that represent a semantic minor version ("5.1", "v5.1") should be next, in descending order
-// 4. any tags that represent a full semantic version ("5.1.3-other", "v5.1.3-other") should be next, in descending order
-// 5. any remaining tags should be sorted in lexicographic order
+// 2. any tags that represent a semantic minor version ("5.1", "v5.1", "v5.1-rc1") should be next, in descending order
+// 3. any tags that represent a full semantic version ("5.1.3-other", "v5.1.3-other") should be next, in descending order
+// 4. any remaining tags should be sorted in lexicographic order
 //
 // The method updates the tags in place.
 func PrioritizeTags(tags []string) {
@@ -952,7 +887,7 @@ func PrioritizeTags(tags []string) {
 	}
 
 	exact := make(map[string]string)
-	var major, minor, micro semver.Versions
+	var minor, micro semver.Versions
 	other := make([]string, 0, len(remaining))
 	for _, tag := range remaining {
 		short := strings.TrimLeft(tag, "v")
@@ -962,14 +897,15 @@ func PrioritizeTags(tags []string) {
 			exact[v.String()] = tag
 			micro = append(micro, v)
 			continue
-		case reMajorSemantic.MatchString(short):
-			if v, err = semver.Parse(short + ".0.0"); err == nil {
-				exact[v.String()] = tag
-				major = append(major, v)
-				continue
-			}
 		case reMinorSemantic.MatchString(short):
 			if v, err = semver.Parse(short + ".0"); err == nil {
+				exact[v.String()] = tag
+				minor = append(minor, v)
+				continue
+			}
+		case reMinorWithPatch.MatchString(short):
+			repl := reMinorReplacement.FindString(short)
+			if v, err = semver.Parse(strings.Replace(short, repl, repl+".0", 1)); err == nil {
 				exact[v.String()] = tag
 				minor = append(minor, v)
 				continue
@@ -977,13 +913,9 @@ func PrioritizeTags(tags []string) {
 		}
 		other = append(other, tag)
 	}
-	sort.Sort(sort.Reverse(major))
 	sort.Sort(sort.Reverse(minor))
 	sort.Sort(sort.Reverse(micro))
 	sort.Sort(sort.StringSlice(other))
-	for _, v := range major {
-		finalTags = append(finalTags, exact[v.String()])
-	}
 	for _, v := range minor {
 		finalTags = append(finalTags, exact[v.String()])
 	}
@@ -1072,4 +1004,13 @@ func IndexOfImageSignature(signatures []ImageSignature, sType string, sContent [
 		}
 	}
 	return -1
+}
+
+func (tagref TagReference) HasAnnotationTag(searchTag string) bool {
+	for _, tag := range strings.Split(tagref.Annotations["tags"], ",") {
+		if tag == searchTag {
+			return true
+		}
+	}
+	return false
 }

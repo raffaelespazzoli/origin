@@ -112,4 +112,3 @@ message ServerAddressByClientCIDR {
   // This can be a hostname, hostname:port, IP or IP:port.
   optional string serverAddress = 2;
 }
-

@@ -32,20 +32,18 @@ var (
 	set_example = dedent.Dedent(``)
 )
 
-func NewCmdSet(f *cmdutil.Factory, out io.Writer) *cobra.Command {
-
+func NewCmdSet(f *cmdutil.Factory, out, err io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "set SUBCOMMAND",
 		Short:   "Set specific features on objects",
 		Long:    set_long,
 		Example: set_example,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
-		},
+		Run:     cmdutil.DefaultSubCommandRun(err),
 	}
 
 	// add subcommands
-	cmd.AddCommand(NewCmdImage(f, out))
+	cmd.AddCommand(NewCmdImage(f, out, err))
+	cmd.AddCommand(NewCmdResources(f, out, err))
 
 	return cmd
 }

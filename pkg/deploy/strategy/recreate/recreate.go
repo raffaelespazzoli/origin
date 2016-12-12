@@ -8,8 +8,10 @@ import (
 	"time"
 
 	kapi "k8s.io/kubernetes/pkg/api"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	"k8s.io/kubernetes/pkg/client/record"
 	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	adapter "k8s.io/kubernetes/pkg/client/unversioned/adapters/internalclientset"
 	"k8s.io/kubernetes/pkg/kubectl"
 	"k8s.io/kubernetes/pkg/runtime"
 
@@ -17,6 +19,7 @@ import (
 	deployapi "github.com/openshift/origin/pkg/deploy/api"
 	strat "github.com/openshift/origin/pkg/deploy/strategy"
 	stratsupport "github.com/openshift/origin/pkg/deploy/strategy/support"
+	stratutil "github.com/openshift/origin/pkg/deploy/strategy/util"
 	deployutil "github.com/openshift/origin/pkg/deploy/util"
 )
 
@@ -31,8 +34,10 @@ type RecreateDeploymentStrategy struct {
 	out, errOut io.Writer
 	// until is a condition that, if reached, will cause the strategy to exit early
 	until string
-	// getReplicationController knows how to get a replication controller.
-	getReplicationController func(namespace, name string) (*kapi.ReplicationController, error)
+	// rcClient is a client to access replication controllers
+	rcClient kcoreclient.ReplicationControllersGetter
+	// eventClient is a client to access events
+	eventClient kcoreclient.EventsGetter
 	// getUpdateAcceptor returns an UpdateAcceptor to verify the first replica
 	// of the deployment.
 	getUpdateAcceptor func(time.Duration, int32) strat.UpdateAcceptor
@@ -43,41 +48,45 @@ type RecreateDeploymentStrategy struct {
 	// codec is used to decode DeploymentConfigs contained in deployments.
 	decoder runtime.Decoder
 	// hookExecutor can execute a lifecycle hook.
-	hookExecutor hookExecutor
+	hookExecutor stratsupport.HookExecutor
 	// retryTimeout is how long to wait for the replica count update to succeed
 	// before giving up.
 	retryTimeout time.Duration
 	// retryPeriod is how often to try updating the replica count.
 	retryPeriod time.Duration
+	// events records the events
+	events record.EventSink
 }
 
-// AcceptorInterval is how often the UpdateAcceptor should check for
+// acceptorInterval is how often the UpdateAcceptor should check for
 // readiness.
-const AcceptorInterval = 1 * time.Second
+const acceptorInterval = 1 * time.Second
 
 // NewRecreateDeploymentStrategy makes a RecreateDeploymentStrategy backed by
 // a real HookExecutor and client.
-func NewRecreateDeploymentStrategy(client kclient.Interface, tagClient client.ImageStreamTagsNamespacer, events record.EventSink, decoder runtime.Decoder, out, errOut io.Writer, until string) *RecreateDeploymentStrategy {
+func NewRecreateDeploymentStrategy(oldClient kclient.Interface, tagClient client.ImageStreamTagsNamespacer, events record.EventSink, decoder runtime.Decoder, out, errOut io.Writer, until string) *RecreateDeploymentStrategy {
 	if out == nil {
 		out = ioutil.Discard
 	}
 	if errOut == nil {
 		errOut = ioutil.Discard
 	}
-	scaler, _ := kubectl.ScalerFor(kapi.Kind("ReplicationController"), client)
+	scaler, _ := kubectl.ScalerFor(kapi.Kind("ReplicationController"), oldClient)
+	// TODO internalclientset: get rid of oldClient after next rebase
+	client := adapter.FromUnversionedClient(oldClient.(*kclient.Client))
 	return &RecreateDeploymentStrategy{
-		out:    out,
-		errOut: errOut,
-		until:  until,
-		getReplicationController: func(namespace, name string) (*kapi.ReplicationController, error) {
-			return client.ReplicationControllers(namespace).Get(name)
-		},
+		out:         out,
+		errOut:      errOut,
+		events:      events,
+		until:       until,
+		rcClient:    client.Core(),
+		eventClient: client.Core(),
 		getUpdateAcceptor: func(timeout time.Duration, minReadySeconds int32) strat.UpdateAcceptor {
-			return stratsupport.NewAcceptNewlyObservedReadyPods(out, client, timeout, AcceptorInterval, minReadySeconds)
+			return stratsupport.NewAcceptAvailablePods(out, client.Core(), timeout, acceptorInterval, minReadySeconds)
 		},
 		scaler:       scaler,
 		decoder:      decoder,
-		hookExecutor: stratsupport.NewHookExecutor(client, tagClient, events, os.Stdout, decoder),
+		hookExecutor: stratsupport.NewHookExecutor(client.Core(), tagClient, client.Core(), os.Stdout, decoder),
 		retryTimeout: 120 * time.Second,
 		retryPeriod:  1 * time.Second,
 	}
@@ -119,6 +128,10 @@ func (s *RecreateDeploymentStrategy) DeployWithAcceptor(from *kapi.ReplicationCo
 	if s.until == "pre" {
 		return strat.NewConditionReachedErr("pre hook succeeded")
 	}
+
+	// Record all warnings
+	defer stratutil.RecordConfigWarnings(s.eventClient, from, s.decoder, s.out)
+	defer stratutil.RecordConfigWarnings(s.eventClient, to, s.decoder, s.out)
 
 	// Scale down the from deployment.
 	if from != nil {
@@ -173,6 +186,7 @@ func (s *RecreateDeploymentStrategy) DeployWithAcceptor(from *kapi.ReplicationCo
 			if err != nil {
 				return fmt.Errorf("couldn't scale %s to %d: %v", to.Name, desiredReplicas, err)
 			}
+
 			to = updatedTo
 		}
 
@@ -204,24 +218,6 @@ func (s *RecreateDeploymentStrategy) scaleAndWait(deployment *kapi.ReplicationCo
 	if err := s.scaler.Scale(deployment.Namespace, deployment.Name, uint(replicas), &kubectl.ScalePrecondition{Size: -1, ResourceVersion: ""}, retry, wait); err != nil {
 		return nil, err
 	}
-	updatedDeployment, err := s.getReplicationController(deployment.Namespace, deployment.Name)
-	if err != nil {
-		return nil, err
-	}
-	return updatedDeployment, nil
-}
 
-// hookExecutor knows how to execute a deployment lifecycle hook.
-type hookExecutor interface {
-	Execute(hook *deployapi.LifecycleHook, deployment *kapi.ReplicationController, suffix, label string) error
-}
-
-// hookExecutorImpl is a pluggable hookExecutor.
-type hookExecutorImpl struct {
-	executeFunc func(hook *deployapi.LifecycleHook, deployment *kapi.ReplicationController, suffix, label string) error
-}
-
-// Execute executes the provided lifecycle hook
-func (i *hookExecutorImpl) Execute(hook *deployapi.LifecycleHook, deployment *kapi.ReplicationController, suffix, label string) error {
-	return i.executeFunc(hook, deployment, suffix, label)
+	return s.rcClient.ReplicationControllers(deployment.Namespace).Get(deployment.Name)
 }

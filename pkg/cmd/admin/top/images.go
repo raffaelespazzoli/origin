@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	kapi "k8s.io/kubernetes/pkg/api"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	kcmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/util/sets"
 
@@ -16,23 +16,29 @@ import (
 	kubegraph "github.com/openshift/origin/pkg/api/kubegraph/nodes"
 	buildapi "github.com/openshift/origin/pkg/build/api"
 	"github.com/openshift/origin/pkg/client"
+	"github.com/openshift/origin/pkg/cmd/templates"
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 	deployapi "github.com/openshift/origin/pkg/deploy/api"
 	imageapi "github.com/openshift/origin/pkg/image/api"
+
 	imagegraph "github.com/openshift/origin/pkg/image/graph/nodes"
 )
 
 const (
 	TopImagesRecommendedName = "images"
+	maxImageIDLength         = 20
+)
 
-	topImagesLong = `Show usage statistics for Images
+var (
+	topImagesLong = templates.LongDesc(`
+		Show usage statistics for Images
 
-This command analyzes all the Images managed by the platform and presents current
-usage statistics.`
+		This command analyzes all the Images managed by the platform and presents current
+		usage statistics.`)
 
-	topImagesExample = `  # Show usage statistics for Images
-  %[1]s %[2]s`
-	maxImageIDLength = 20
+	topImagesExample = templates.Examples(`
+		# Show usage statistics for Images
+  	%[1]s %[2]s`)
 )
 
 // NewCmdTopImages implements the OpenShift cli top images command.
@@ -62,13 +68,13 @@ type TopImagesOptions struct {
 	// helpers
 	out      io.Writer
 	osClient client.Interface
-	kClient  kclient.Interface
+	kClient  kclientset.Interface
 }
 
 // Complete turns a partially defined TopImagesOptions into a solvent structure
 // which can be validated and used for showing limits usage.
 func (o *TopImagesOptions) Complete(f *clientcmd.Factory, cmd *cobra.Command, args []string, out io.Writer) error {
-	osClient, kClient, err := f.Clients()
+	osClient, _, kClient, err := f.Clients()
 	if err != nil {
 		return err
 	}
@@ -90,7 +96,7 @@ func (o *TopImagesOptions) Complete(f *clientcmd.Factory, cmd *cobra.Command, ar
 	}
 	o.Streams = allStreams
 
-	allPods, err := kClient.Pods(namespace).List(kapi.ListOptions{})
+	allPods, err := kClient.Core().Pods(namespace).List(kapi.ListOptions{})
 	if err != nil {
 		return err
 	}

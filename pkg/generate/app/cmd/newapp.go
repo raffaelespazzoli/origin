@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,22 +16,27 @@ import (
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/api/meta"
 	"k8s.io/kubernetes/pkg/api/validation"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/kubectl/resource"
 	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/errors"
+	kutilerrors "k8s.io/kubernetes/pkg/util/errors"
 
+	dockerfileparser "github.com/docker/docker/builder/dockerfile/parser"
+	ometa "github.com/openshift/origin/pkg/api/meta"
 	authapi "github.com/openshift/origin/pkg/authorization/api"
 	buildapi "github.com/openshift/origin/pkg/build/api"
 	buildutil "github.com/openshift/origin/pkg/build/util"
 	"github.com/openshift/origin/pkg/client"
 	cmdutil "github.com/openshift/origin/pkg/cmd/util"
 	"github.com/openshift/origin/pkg/dockerregistry"
+	"github.com/openshift/origin/pkg/generate"
 	"github.com/openshift/origin/pkg/generate/app"
 	"github.com/openshift/origin/pkg/generate/dockerfile"
+	"github.com/openshift/origin/pkg/generate/jenkinsfile"
 	"github.com/openshift/origin/pkg/generate/source"
 	imageapi "github.com/openshift/origin/pkg/image/api"
 	outil "github.com/openshift/origin/pkg/util"
+	dockerfileutil "github.com/openshift/origin/pkg/util/docker/dockerfile"
 )
 
 const (
@@ -39,10 +46,6 @@ const (
 	GeneratedByNewApp    = "OpenShiftNewApp"
 	GeneratedByNewBuild  = "OpenShiftNewBuild"
 )
-
-// ErrNoDockerfileDetected is the error returned when the requested build strategy is Docker
-// and no Dockerfile is detected in the repository.
-var ErrNoDockerfileDetected = fmt.Errorf("No Dockerfile was found in the repository and the requested build strategy is 'docker'")
 
 // GenerationInputs control how new-app creates output
 // TODO: split these into finer grained structs
@@ -55,7 +58,7 @@ type GenerationInputs struct {
 
 	InsecureRegistry bool
 
-	Strategy string
+	Strategy generate.Strategy
 
 	Name     string
 	To       string
@@ -89,8 +92,9 @@ type AppConfig struct {
 
 	SkipGeneration bool
 
-	AllowSecretUse bool
-	SecretAccessor app.SecretAccessor
+	AllowSecretUse              bool
+	AllowNonNumericExposedPorts bool
+	SecretAccessor              app.SecretAccessor
 
 	AsSearch bool
 	AsList   bool
@@ -99,7 +103,7 @@ type AppConfig struct {
 	Out    io.Writer
 	ErrOut io.Writer
 
-	KubeClient kclient.Interface
+	KubeClient kclientset.Interface
 
 	Resolvers
 
@@ -131,7 +135,7 @@ func (e ErrRequiresExplicitAccess) Error() string {
 }
 
 // ErrNoInputs is returned when no inputs are specified
-var ErrNoInputs = fmt.Errorf("no inputs provided")
+var ErrNoInputs = errors.New("no inputs provided")
 
 // AppResult contains the results of an application
 type AppResult struct {
@@ -156,8 +160,9 @@ func NewAppConfig() *AppConfig {
 	return &AppConfig{
 		Resolvers: Resolvers{
 			Detector: app.SourceRepositoryEnumerator{
-				Detectors: source.DefaultDetectors,
-				Tester:    dockerfile.NewTester(),
+				Detectors:         source.DefaultDetectors,
+				DockerfileTester:  dockerfile.NewTester(),
+				JenkinsfileTester: jenkinsfile.NewTester(),
 			},
 		},
 	}
@@ -244,35 +249,28 @@ func (c *AppConfig) AddArguments(args []string) []string {
 }
 
 // validateBuilders confirms that all images associated with components that are to be built,
-// are builders (or we're using a docker strategy).
+// are builders (or we're using a non-source strategy).
 func (c *AppConfig) validateBuilders(components app.ComponentReferences) error {
-	if len(c.Strategy) != 0 {
+	if c.Strategy != generate.StrategyUnspecified {
 		return nil
 	}
 	errs := []error{}
 	for _, ref := range components {
 		input := ref.Input()
 		// if we're supposed to build this thing, and the image/imagestream we've matched it to did not come from an explicit CLI argument,
-		// and the image/imagestream we matched to is not explicitly an s2i builder, and we're not doing a docker-type build, warn the user
+		// and the image/imagestream we matched to is not explicitly an s2i builder, and we're doing a source-type build, warn the user
 		// that this probably won't work and force them to declare their intention explicitly.
-		if input.ExpectToBuild && input.ResolvedMatch != nil && !app.IsBuilderMatch(input.ResolvedMatch) && input.Uses != nil && !input.Uses.IsDockerBuild() {
+		if input.ExpectToBuild && input.ResolvedMatch != nil && !app.IsBuilderMatch(input.ResolvedMatch) && input.Uses != nil && input.Uses.GetStrategy() == generate.StrategySource {
 			errs = append(errs, fmt.Errorf("the image match %q for source repository %q does not appear to be a source-to-image builder.\n\n- to attempt to use this image as a source builder, pass \"--strategy=source\"\n- to use it as a base image for a Docker build, pass \"--strategy=docker\"", input.ResolvedMatch.Name, input.Uses))
 			continue
 		}
 	}
-	return errors.NewAggregate(errs)
+	return kutilerrors.NewAggregate(errs)
 }
 
 func validateEnforcedName(name string) error {
 	if reasons := validation.ValidateServiceName(name, false); len(reasons) != 0 && !app.IsParameterizableValue(name) {
 		return fmt.Errorf("invalid name: %s. Must be an a lower case alphanumeric (a-z, and 0-9) string with a maximum length of 24 characters, where the first character is a letter (a-z), and the '-' character is allowed anywhere except the first or last character.", name)
-	}
-	return nil
-}
-
-func validateStrategyName(name string) error {
-	if name != "docker" && name != "source" {
-		return fmt.Errorf("invalid strategy: %s. Must be 'docker' or 'source'.", name)
 	}
 	return nil
 }
@@ -299,7 +297,7 @@ func (c *AppConfig) buildPipelines(components app.ComponentReferences, environme
 			switch {
 			case refInput.ExpectToBuild:
 				glog.V(4).Infof("will add %q secrets into a build for a source build of %q", strings.Join(c.Secrets, ","), refInput.Uses)
-				if err := refInput.Uses.AddBuildSecrets(c.Secrets, refInput.Uses.IsDockerBuild()); err != nil {
+				if err := refInput.Uses.AddBuildSecrets(c.Secrets); err != nil {
 					return nil, fmt.Errorf("unable to add build secrets %q: %v", strings.Join(c.Secrets, ","), err)
 				}
 
@@ -312,7 +310,7 @@ func (c *AppConfig) buildPipelines(components app.ComponentReferences, environme
 					if err != nil {
 						return nil, fmt.Errorf("can't build %q: %v", from, err)
 					}
-					if !inputImage.AsImageStream && from != "scratch" {
+					if !inputImage.AsImageStream && from != "scratch" && (refInput.Uses == nil || refInput.Uses.GetStrategy() != generate.StrategyPipeline) {
 						msg := "Could not find an image stream match for %q. Make sure that a Docker image with that tag is available on the node for the build to succeed."
 						glog.Warningf(msg, from)
 					}
@@ -346,6 +344,12 @@ func (c *AppConfig) buildPipelines(components app.ComponentReferences, environme
 			if c.NoOutput {
 				pipeline.Build.Output = nil
 			}
+			if refInput.Uses != nil && refInput.Uses.GetStrategy() == generate.StrategyPipeline {
+				pipeline.Build.Output = nil
+				pipeline.Deployment = nil
+				pipeline.Image = nil
+				pipeline.InputImage = nil
+			}
 			common = append(common, pipeline)
 			if err := common.Reduce(); err != nil {
 				return nil, fmt.Errorf("can't create a pipeline from %s: %v", common, err)
@@ -358,14 +362,14 @@ func (c *AppConfig) buildPipelines(components app.ComponentReferences, environme
 }
 
 // buildTemplates converts a set of resolved, valid references into references to template objects.
-func (c *AppConfig) buildTemplates(components app.ComponentReferences, environment app.Environment) (string, []runtime.Object, error) {
+func (c *AppConfig) buildTemplates(components app.ComponentReferences, parameters app.Environment, environment app.Environment) (string, []runtime.Object, error) {
 	objects := []runtime.Object{}
 	name := ""
 	for _, ref := range components {
 		tpl := ref.Input().ResolvedMatch.Template
 
 		glog.V(4).Infof("processing template %s/%s", c.OriginNamespace, tpl.Name)
-		result, err := TransformTemplate(tpl, c.OSClient, c.OriginNamespace, environment)
+		result, err := TransformTemplate(tpl, c.OSClient, c.OriginNamespace, parameters)
 		if err != nil {
 			return name, nil, err
 		}
@@ -373,6 +377,22 @@ func (c *AppConfig) buildTemplates(components app.ComponentReferences, environme
 			name = tpl.Name
 		}
 		objects = append(objects, result.Objects...)
+		if len(result.Objects) > 0 {
+			// if environment variables were passed in, let's apply the environment variables
+			// to every pod template object
+			for i := range result.Objects {
+				podSpec, _, err := ometa.GetPodSpec(result.Objects[i])
+				if err == nil {
+					for ii := range podSpec.Containers {
+						if podSpec.Containers[ii].Env != nil {
+							podSpec.Containers[ii].Env = app.JoinEnvironment(environment.List(), podSpec.Containers[ii].Env)
+						} else {
+							podSpec.Containers[ii].Env = environment.List()
+						}
+					}
+				}
+			}
+		}
 
 		DescribeGeneratedTemplate(c.Out, ref.Input().String(), result, c.OriginNamespace)
 	}
@@ -428,7 +448,7 @@ func (c *AppConfig) installComponents(components app.ComponentReferences, env ap
 		var ok bool
 		name, ok = imageRef.SuggestName()
 		if !ok {
-			return nil, "", fmt.Errorf("can't suggest a valid name, please specify a name with --name")
+			return nil, "", errors.New("can't suggest a valid name, please specify a name with --name")
 		}
 	}
 	imageRef.ObjectName = name
@@ -448,7 +468,7 @@ func (c *AppConfig) installComponents(components app.ComponentReferences, env ap
 
 	serviceAccountName := "installer"
 	if token != nil && token.ServiceAccount {
-		if _, err := c.KubeClient.ServiceAccounts(c.OriginNamespace).Get(serviceAccountName); err != nil {
+		if _, err := c.KubeClient.Core().ServiceAccounts(c.OriginNamespace).Get(serviceAccountName); err != nil {
 			if kerrors.IsNotFound(err) {
 				objects = append(objects,
 					// create a new service account
@@ -495,10 +515,10 @@ func (c *AppConfig) RunQuery() (*QueryResult, error) {
 
 	if c.AsList {
 		if c.AsSearch {
-			return nil, fmt.Errorf("--list and --search can't be used together")
+			return nil, errors.New("--list and --search can't be used together")
 		}
 		if c.HasArguments() {
-			return nil, fmt.Errorf("--list can't be used with arguments")
+			return nil, errors.New("--list can't be used with arguments")
 		}
 		c.Components = append(c.Components, "*")
 	}
@@ -509,7 +529,7 @@ func (c *AppConfig) RunQuery() (*QueryResult, error) {
 	}
 	components, repositories, errs := b.Result()
 	if len(errs) > 0 {
-		return nil, errors.NewAggregate(errs)
+		return nil, kutilerrors.NewAggregate(errs)
 	}
 
 	if len(components) == 0 && !c.AsList {
@@ -517,16 +537,16 @@ func (c *AppConfig) RunQuery() (*QueryResult, error) {
 	}
 
 	if len(repositories) > 0 {
-		errs = append(errs, fmt.Errorf("--search can't be used with source code"))
+		errs = append(errs, errors.New("--search can't be used with source code"))
 	}
 	if len(environment) > 0 {
-		errs = append(errs, fmt.Errorf("--search can't be used with --env"))
+		errs = append(errs, errors.New("--search can't be used with --env"))
 	}
 	if len(parameters) > 0 {
-		errs = append(errs, fmt.Errorf("--search can't be used with --param"))
+		errs = append(errs, errors.New("--search can't be used with --param"))
 	}
 	if len(errs) > 0 {
-		return nil, errors.NewAggregate(errs)
+		return nil, kutilerrors.NewAggregate(errs)
 	}
 
 	if err := components.Search(); err != nil {
@@ -574,7 +594,7 @@ func (c *AppConfig) validate() (cmdutil.Environment, cmdutil.Environment, error)
 	}
 	errs = append(errs, paramsErrs...)
 
-	return env, params, errors.NewAggregate(errs)
+	return env, params, kutilerrors.NewAggregate(errs)
 }
 
 // Run executes the provided config to generate objects.
@@ -594,12 +614,12 @@ func (c *AppConfig) Run() (*AppResult, error) {
 	repositories := resolved.Repositories
 	components := resolved.Components
 
-	if err := c.validateBuilders(components); err != nil {
-		return nil, err
-	}
-
 	if len(repositories) == 0 && len(components) == 0 {
 		return nil, ErrNoInputs
+	}
+
+	if err := c.validateBuilders(components); err != nil {
+		return nil, err
 	}
 
 	if len(c.Name) > 0 {
@@ -608,10 +628,8 @@ func (c *AppConfig) Run() (*AppResult, error) {
 		}
 	}
 
-	if len(c.Strategy) > 0 {
-		if err := validateStrategyName(c.Strategy); err != nil {
-			return nil, err
-		}
+	if err := optionallyValidateExposedPorts(c, repositories); err != nil {
+		return nil, err
 	}
 
 	if len(c.To) > 0 {
@@ -621,10 +639,10 @@ func (c *AppConfig) Run() (*AppResult, error) {
 	}
 
 	if len(components.ImageComponentRefs().Group()) > 1 && len(c.Name) > 0 {
-		return nil, fmt.Errorf("only one component or source repository can be used when specifying a name")
+		return nil, errors.New("only one component or source repository can be used when specifying a name")
 	}
 	if len(components.UseSource()) > 1 && len(c.To) > 0 {
-		return nil, fmt.Errorf("only one component with source can be used when specifying an output image reference")
+		return nil, errors.New("only one component with source can be used when specifying an output image reference")
 	}
 
 	env := app.Environment(environment)
@@ -646,9 +664,6 @@ func (c *AppConfig) Run() (*AppResult, error) {
 
 	pipelines, err := c.buildPipelines(components.ImageComponentRefs(), env)
 	if err != nil {
-		if err == app.ErrNameRequired {
-			return nil, fmt.Errorf("can't suggest a valid name, please specify a name with --name")
-		}
 		return nil, err
 	}
 
@@ -665,10 +680,50 @@ func (c *AppConfig) Run() (*AppResult, error) {
 
 	objects = app.AddServices(objects, false)
 
-	templateName, templateObjects, err := c.buildTemplates(components.TemplateComponentRefs(), app.Environment(parameters))
+	templateName, templateObjects, err := c.buildTemplates(components.TemplateComponentRefs(), app.Environment(parameters), app.Environment(environment))
 	if err != nil {
 		return nil, err
 	}
+
+	// check for circular reference specifically from the template objects and print warnings if they exist
+	err = c.checkCircularReferences(templateObjects)
+	if err != nil {
+		if err, ok := err.(app.CircularOutputReferenceError); ok {
+			// templates only apply to `oc new-app`
+			addOn := ""
+			if len(c.Name) == 0 {
+				addOn = ", override artifact names with --name"
+			}
+			fmt.Fprintf(c.ErrOut, "--> WARNING: %v\n%s", err, addOn)
+		} else {
+			return nil, err
+		}
+	}
+	// check for circular reference specifically from the newly generated objects, handling new-app vs. new-build nuances as needed
+	err = c.checkCircularReferences(objects)
+	if err != nil {
+		if err, ok := err.(app.CircularOutputReferenceError); ok {
+			if c.ExpectToBuild {
+				// circular reference handling for `oc new-build`.
+				if len(c.To) == 0 {
+					// Output reference was generated, return error.
+					return nil, fmt.Errorf("%v, set a different tag with --to", err)
+				}
+				// Output reference was explicitly provided, print warning.
+				fmt.Fprintf(c.ErrOut, "--> WARNING: %v\n", err)
+			} else {
+				// circular reference handling for `oc new-app`
+				if len(c.Name) == 0 {
+					return nil, fmt.Errorf("%v, override artifact names with --name", err)
+				}
+				// Output reference was explicitly provided, print warning.
+				fmt.Fprintf(c.ErrOut, "--> WARNING: %v\n", err)
+			}
+		} else {
+			return nil, err
+		}
+	}
+
 	objects = append(objects, templateObjects...)
 
 	name = c.Name
@@ -688,23 +743,6 @@ func (c *AppConfig) Run() (*AppResult, error) {
 			if bc, ok := obj.(*buildapi.BuildConfig); ok {
 				name = bc.Name
 				break
-			}
-		}
-	}
-
-	// Only check circular references for `oc new-build`.
-	if c.ExpectToBuild {
-		err = c.checkCircularReferences(objects)
-		if err != nil {
-			if err, ok := err.(app.CircularOutputReferenceError); ok {
-				if len(c.To) == 0 {
-					// Output reference was generated, return error.
-					return nil, fmt.Errorf("%v, set a different tag with --to", err)
-				}
-				// Output reference was explicitly provided, print warning.
-				fmt.Fprintf(c.ErrOut, "--> WARNING: %v\n", err)
-			} else {
-				return nil, err
 			}
 		}
 	}
@@ -730,7 +768,7 @@ func (c *AppConfig) Run() (*AppResult, error) {
 func (c *AppConfig) followRefToDockerImage(ref *kapi.ObjectReference, isContext *imageapi.ImageStream, objects app.Objects) (*kapi.ObjectReference, error) {
 
 	if ref == nil {
-		return nil, fmt.Errorf("Unable to follow nil")
+		return nil, errors.New("Unable to follow nil")
 	}
 
 	if ref.Kind == "DockerImage" {
@@ -885,4 +923,34 @@ func (c *AppConfig) GetBuildEnvironment(environment app.Environment) app.Environ
 		return environment
 	}
 	return app.Environment{}
+}
+
+func optionallyValidateExposedPorts(config *AppConfig, repositories app.SourceRepositories) error {
+	if config.AllowNonNumericExposedPorts {
+		return nil
+	}
+
+	if config.Strategy != generate.StrategyUnspecified && config.Strategy != generate.StrategyDocker {
+		return nil
+	}
+
+	for _, repo := range repositories {
+		if repoInfo := repo.Info(); repoInfo != nil && repoInfo.Dockerfile != nil {
+			node := repoInfo.Dockerfile.AST()
+			if err := exposedPortsAreNumeric(node); err != nil {
+				return fmt.Errorf("the Dockerfile has an invalid EXPOSE instruction: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func exposedPortsAreNumeric(node *dockerfileparser.Node) error {
+	for _, port := range dockerfileutil.LastExposedPorts(node) {
+		if _, err := strconv.ParseInt(port, 10, 32); err != nil {
+			return fmt.Errorf("could not parse %q: must be numeric", port)
+		}
+	}
+	return nil
 }

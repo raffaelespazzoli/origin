@@ -46,9 +46,9 @@ func ProbeVolumePlugins(volumeConfig volume.VolumeConfig) []volume.VolumePlugin 
 type hostPathPlugin struct {
 	host volume.VolumeHost
 	// decouple creating Recyclers/Deleters/Provisioners by deferring to a function.  Allows for easier testing.
-	newRecyclerFunc    func(pvName string, spec *volume.Spec, host volume.VolumeHost, volumeConfig volume.VolumeConfig) (volume.Recycler, error)
+	newRecyclerFunc    func(pvName string, spec *volume.Spec, eventRecorder volume.RecycleEventRecorder, host volume.VolumeHost, volumeConfig volume.VolumeConfig) (volume.Recycler, error)
 	newDeleterFunc     func(spec *volume.Spec, host volume.VolumeHost) (volume.Deleter, error)
-	newProvisionerFunc func(options volume.VolumeOptions, host volume.VolumeHost) (volume.Provisioner, error)
+	newProvisionerFunc func(options volume.VolumeOptions, host volume.VolumeHost, plugin *hostPathPlugin) (volume.Provisioner, error)
 	config             volume.VolumeConfig
 }
 
@@ -112,8 +112,8 @@ func (plugin *hostPathPlugin) NewUnmounter(volName string, podUID types.UID) (vo
 	}}, nil
 }
 
-func (plugin *hostPathPlugin) NewRecycler(pvName string, spec *volume.Spec) (volume.Recycler, error) {
-	return plugin.newRecyclerFunc(pvName, spec, plugin.host, plugin.config)
+func (plugin *hostPathPlugin) NewRecycler(pvName string, spec *volume.Spec, eventRecorder volume.RecycleEventRecorder) (volume.Recycler, error) {
+	return plugin.newRecyclerFunc(pvName, spec, eventRecorder, plugin.host, plugin.config)
 }
 
 func (plugin *hostPathPlugin) NewDeleter(spec *volume.Spec) (volume.Deleter, error) {
@@ -124,10 +124,7 @@ func (plugin *hostPathPlugin) NewProvisioner(options volume.VolumeOptions) (volu
 	if !plugin.config.ProvisioningEnabled {
 		return nil, fmt.Errorf("Provisioning in volume plugin %q is disabled", plugin.GetPluginName())
 	}
-	if len(options.AccessModes) == 0 {
-		options.AccessModes = plugin.GetAccessModes()
-	}
-	return plugin.newProvisionerFunc(options, plugin.host)
+	return plugin.newProvisionerFunc(options, plugin.host, plugin)
 }
 
 func (plugin *hostPathPlugin) ConstructVolumeSpec(volumeName, mountPath string) (*volume.Spec, error) {
@@ -142,18 +139,19 @@ func (plugin *hostPathPlugin) ConstructVolumeSpec(volumeName, mountPath string) 
 	return volume.NewSpecFromVolume(hostPathVolume), nil
 }
 
-func newRecycler(pvName string, spec *volume.Spec, host volume.VolumeHost, config volume.VolumeConfig) (volume.Recycler, error) {
+func newRecycler(pvName string, spec *volume.Spec, eventRecorder volume.RecycleEventRecorder, host volume.VolumeHost, config volume.VolumeConfig) (volume.Recycler, error) {
 	if spec.PersistentVolume == nil || spec.PersistentVolume.Spec.HostPath == nil {
 		return nil, fmt.Errorf("spec.PersistentVolumeSource.HostPath is nil")
 	}
 	path := spec.PersistentVolume.Spec.HostPath.Path
 	return &hostPathRecycler{
-		name:    spec.Name(),
-		path:    path,
-		host:    host,
-		config:  config,
-		timeout: volume.CalculateTimeoutForVolume(config.RecyclerMinimumTimeout, config.RecyclerTimeoutIncrement, spec.PersistentVolume),
-		pvName:  pvName,
+		name:          spec.Name(),
+		path:          path,
+		host:          host,
+		config:        config,
+		timeout:       volume.CalculateTimeoutForVolume(config.RecyclerMinimumTimeout, config.RecyclerTimeoutIncrement, spec.PersistentVolume),
+		pvName:        pvName,
+		eventRecorder: eventRecorder,
 	}, nil
 }
 
@@ -165,8 +163,8 @@ func newDeleter(spec *volume.Spec, host volume.VolumeHost) (volume.Deleter, erro
 	return &hostPathDeleter{name: spec.Name(), path: path, host: host}, nil
 }
 
-func newProvisioner(options volume.VolumeOptions, host volume.VolumeHost) (volume.Provisioner, error) {
-	return &hostPathProvisioner{options: options, host: host}, nil
+func newProvisioner(options volume.VolumeOptions, host volume.VolumeHost, plugin *hostPathPlugin) (volume.Provisioner, error) {
+	return &hostPathProvisioner{options: options, host: host, plugin: plugin}, nil
 }
 
 // HostPath volumes represent a bare host file or directory mount.
@@ -234,7 +232,8 @@ type hostPathRecycler struct {
 	config  volume.VolumeConfig
 	timeout int64
 	volume.MetricsNil
-	pvName string
+	pvName        string
+	eventRecorder volume.RecycleEventRecorder
 }
 
 func (r *hostPathRecycler) GetPath() string {
@@ -253,7 +252,7 @@ func (r *hostPathRecycler) Recycle() error {
 			Path: r.path,
 		},
 	}
-	return volume.RecycleVolumeByWatchingPodUntilCompletion(r.pvName, pod, r.host.GetKubeClient())
+	return volume.RecycleVolumeByWatchingPodUntilCompletion(r.pvName, pod, r.host.GetKubeClient(), r.eventRecorder)
 }
 
 // hostPathProvisioner implements a Provisioner for the HostPath plugin
@@ -261,6 +260,7 @@ func (r *hostPathRecycler) Recycle() error {
 type hostPathProvisioner struct {
 	host    volume.VolumeHost
 	options volume.VolumeOptions
+	plugin  *hostPathPlugin
 }
 
 // Create for hostPath simply creates a local /tmp/hostpath_pv/%s directory as a new PersistentVolume.
@@ -268,6 +268,7 @@ type hostPathProvisioner struct {
 func (r *hostPathProvisioner) Provision() (*api.PersistentVolume, error) {
 	fullpath := fmt.Sprintf("/tmp/hostpath_pv/%s", uuid.NewUUID())
 
+	capacity := r.options.PVC.Spec.Resources.Requests[api.ResourceName(api.ResourceStorage)]
 	pv := &api.PersistentVolume{
 		ObjectMeta: api.ObjectMeta{
 			Name: r.options.PVName,
@@ -277,9 +278,9 @@ func (r *hostPathProvisioner) Provision() (*api.PersistentVolume, error) {
 		},
 		Spec: api.PersistentVolumeSpec{
 			PersistentVolumeReclaimPolicy: r.options.PersistentVolumeReclaimPolicy,
-			AccessModes:                   r.options.AccessModes,
+			AccessModes:                   r.options.PVC.Spec.AccessModes,
 			Capacity: api.ResourceList{
-				api.ResourceName(api.ResourceStorage): r.options.Capacity,
+				api.ResourceName(api.ResourceStorage): capacity,
 			},
 			PersistentVolumeSource: api.PersistentVolumeSource{
 				HostPath: &api.HostPathVolumeSource{
@@ -287,6 +288,9 @@ func (r *hostPathProvisioner) Provision() (*api.PersistentVolume, error) {
 				},
 			},
 		},
+	}
+	if len(r.options.PVC.Spec.AccessModes) == 0 {
+		pv.Spec.AccessModes = r.plugin.GetAccessModes()
 	}
 
 	return pv, os.MkdirAll(pv.Spec.HostPath.Path, 0750)

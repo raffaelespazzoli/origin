@@ -19,8 +19,8 @@ import (
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	kerrors "k8s.io/kubernetes/pkg/api/errors"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	"k8s.io/kubernetes/pkg/client/restclient"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/util/sets"
 
 	"github.com/openshift/origin/pkg/client"
@@ -54,6 +54,12 @@ const (
 	// belongs to repository> entries. The higher the value, the faster queries but also a higher risk of
 	// leaking a blob that is no longer tagged in given repository.
 	BlobRepositoryCacheTTLEnvVar = "REGISTRY_MIDDLEWARE_REPOSITORY_OPENSHIFT_BLOBREPOSITORYCACHETTL"
+
+	// Pullthrough is a boolean environment variable that controls whether pullthrough is enabled.
+	PullthroughEnvVar = "REGISTRY_MIDDLEWARE_REPOSITORY_OPENSHIFT_PULLTHROUGH"
+
+	// MirrorPullthrough is a boolean environment variable that controls mirroring of blobs on pullthrough.
+	MirrorPullthroughEnvVar = "REGISTRY_MIDDLEWARE_REPOSITORY_OPENSHIFT_MIRRORPULLTHROUGH"
 
 	// Default values
 
@@ -109,7 +115,7 @@ func init() {
 				quotaEnforcing = newQuotaEnforcingConfig(ctx, os.Getenv(EnforceQuotaEnvVar), os.Getenv(ProjectCacheTTLEnvVar), options)
 			}
 
-			return newRepositoryWithClient(registryOSClient, kClient, kClient, ctx, repo, options)
+			return newRepositoryWithClient(registryOSClient, kClient.Core(), kClient.Core(), ctx, repo, options)
 		},
 	)
 
@@ -126,8 +132,8 @@ type repository struct {
 	distribution.Repository
 
 	ctx              context.Context
-	quotaClient      kclient.ResourceQuotasNamespacer
-	limitClient      kclient.LimitRangesNamespacer
+	quotaClient      kcoreclient.ResourceQuotasGetter
+	limitClient      kcoreclient.LimitRangesGetter
 	registryOSClient client.Interface
 	registryAddr     string
 	namespace        string
@@ -136,6 +142,8 @@ type repository struct {
 	// if true, the repository will check remote references in the image stream to support pulling "through"
 	// from a remote repository
 	pullthrough bool
+	// mirrorPullthrough will mirror remote blobs into the local repository if set
+	mirrorPullthrough bool
 	// acceptschema2 allows to refuse the manifest schema version 2
 	acceptschema2 bool
 	// blobrepositorycachettl is an eviction timeout for <blob belongs to repository> entries of cachedLayers
@@ -151,8 +159,8 @@ var _ distribution.ManifestService = &repository{}
 // newRepositoryWithClient returns a new repository middleware.
 func newRepositoryWithClient(
 	registryOSClient client.Interface,
-	quotaClient kclient.ResourceQuotasNamespacer,
-	limitClient kclient.LimitRangesNamespacer,
+	quotaClient kcoreclient.ResourceQuotasGetter,
+	limitClient kcoreclient.LimitRangesGetter,
 	ctx context.Context,
 	repo distribution.Repository,
 	options map[string]interface{},
@@ -170,7 +178,11 @@ func newRepositoryWithClient(
 	if err != nil {
 		context.GetLogger(ctx).Error(err)
 	}
-	pullthrough, err := getBoolOption("", "pullthrough", false, options)
+	pullthrough, err := getBoolOption(PullthroughEnvVar, "pullthrough", false, options)
+	if err != nil {
+		context.GetLogger(ctx).Error(err)
+	}
+	mirrorPullthrough, err := getBoolOption(MirrorPullthroughEnvVar, "mirrorpullthrough", true, options)
 	if err != nil {
 		context.GetLogger(ctx).Error(err)
 	}
@@ -193,6 +205,7 @@ func newRepositoryWithClient(
 		acceptschema2:          acceptschema2,
 		blobrepositorycachettl: blobrepositorycachettl,
 		pullthrough:            pullthrough,
+		mirrorPullthrough:      mirrorPullthrough,
 		cachedLayers:           cachedLayers,
 	}, nil
 }
@@ -228,6 +241,7 @@ func (r *repository) Blobs(ctx context.Context) distribution.BlobStore {
 
 			repo:          &repo,
 			digestToStore: make(map[string]distribution.BlobStore),
+			mirror:        r.mirrorPullthrough,
 		}
 	}
 
@@ -620,26 +634,9 @@ func (r *repository) signedManifestFromImage(image *imageapi.Image) (*schema1.Si
 		}
 	}
 
-	dgst, err := digest.ParseDigest(image.Name)
-	if err != nil {
-		return nil, err
-	}
-
 	var signBytes [][]byte
-	if len(image.DockerImageSignatures) == 0 {
-		// Fetch the signatures for the manifest
-		signatures, errSign := r.getSignatures(dgst)
-		if errSign != nil {
-			return nil, errSign
-		}
-
-		for _, signatureDigest := range signatures {
-			signBytes = append(signBytes, []byte(signatureDigest))
-		}
-	} else {
-		for _, sign := range image.DockerImageSignatures {
-			signBytes = append(signBytes, sign)
-		}
+	for _, sign := range image.DockerImageSignatures {
+		signBytes = append(signBytes, sign)
 	}
 
 	jsig, err := libtrust.NewJSONSignature(raw, signBytes...)
@@ -658,28 +655,6 @@ func (r *repository) signedManifestFromImage(image *imageapi.Image) (*schema1.Si
 		return nil, err
 	}
 	return &sm, err
-}
-
-func (r *repository) getSignatures(dgst digest.Digest) ([]digest.Digest, error) {
-	// We can not use the r.repository here. docker/distribution wraps all the methods that
-	// write or read blobs. It is made for notifications service. We need to get a real
-	// repository without any wrappers.
-	repository, err := dockerRegistry.Repository(r.ctx, r.Named())
-	if err != nil {
-		return nil, err
-	}
-
-	manifestService, err := repository.Manifests(r.ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	signaturesGetter, ok := manifestService.(distribution.SignaturesGetter)
-	if !ok {
-		return nil, fmt.Errorf("unable to convert ManifestService into SignaturesGetter")
-	}
-
-	return signaturesGetter.GetSignatures(r.ctx, dgst)
 }
 
 // deserializedManifestFromImage converts an Image to a DeserializedManifest.

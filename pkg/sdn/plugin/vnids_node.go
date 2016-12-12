@@ -9,11 +9,11 @@ import (
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/cache"
-	kubetypes "k8s.io/kubernetes/pkg/kubelet/container"
 	kerrors "k8s.io/kubernetes/pkg/util/errors"
 	"k8s.io/kubernetes/pkg/util/sets"
 	utilwait "k8s.io/kubernetes/pkg/util/wait"
 
+	osclient "github.com/openshift/origin/pkg/client"
 	osapi "github.com/openshift/origin/pkg/sdn/api"
 )
 
@@ -77,17 +77,22 @@ func (vmap *nodeVNIDMap) GetVNID(name string) (uint32, error) {
 // So, use this method to alleviate this problem. This method will
 // retry vnid lookup before giving up.
 func (vmap *nodeVNIDMap) WaitAndGetVNID(name string) (uint32, error) {
-	// Try few times up to 2 seconds
-	retries := 20
-	retryInterval := 100 * time.Millisecond
-	for i := 0; i < retries; i++ {
-		if id, err := vmap.GetVNID(name); err == nil {
-			return id, nil
-		}
-		time.Sleep(retryInterval)
+	var id uint32
+	backoff := utilwait.Backoff{
+		Duration: 100 * time.Millisecond,
+		Factor:   1.5,
+		Steps:    5,
 	}
-
-	return 0, fmt.Errorf("Failed to find netid for namespace: %s in vnid map", name)
+	err := utilwait.ExponentialBackoff(backoff, func() (bool, error) {
+		var err error
+		id, err = vmap.GetVNID(name)
+		return err == nil, nil
+	})
+	if err == nil {
+		return id, nil
+	} else {
+		return 0, fmt.Errorf("Failed to find netid for namespace: %s in vnid map", name)
+	}
 }
 
 func (vmap *nodeVNIDMap) setVNID(name string, id uint32) {
@@ -117,13 +122,13 @@ func (vmap *nodeVNIDMap) unsetVNID(name string) (id uint32, err error) {
 	return id, nil
 }
 
-func (vmap *nodeVNIDMap) populateVNIDs(registry *Registry) error {
-	nets, err := registry.GetNetNamespaces()
+func (vmap *nodeVNIDMap) populateVNIDs(osClient *osclient.Client) error {
+	nets, err := osClient.NetNamespaces().List(kapi.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	for _, net := range nets {
+	for _, net := range nets.Items {
 		vmap.setVNID(net.Name, net.NetID)
 	}
 	return nil
@@ -133,7 +138,7 @@ func (vmap *nodeVNIDMap) populateVNIDs(registry *Registry) error {
 
 func (node *OsdnNode) VnidStartNode() error {
 	// Populate vnid map synchronously so that existing services can fetch vnid
-	err := node.vnids.populateVNIDs(node.registry)
+	err := node.vnids.populateVNIDs(node.osClient)
 	if err != nil {
 		return err
 	}
@@ -152,7 +157,7 @@ func (node *OsdnNode) updatePodNetwork(namespace string, oldNetID, netID uint32)
 	if err != nil {
 		return err
 	}
-	services, err := node.registry.GetServicesForNamespace(namespace)
+	services, err := node.kClient.Services(namespace).List(kapi.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -161,14 +166,18 @@ func (node *OsdnNode) updatePodNetwork(namespace string, oldNetID, netID uint32)
 
 	// Update OF rules for the existing/old pods in the namespace
 	for _, pod := range pods {
-		err = node.UpdatePod(pod.Namespace, pod.Name, kubetypes.DockerID(getPodContainerID(&pod)))
+		err = node.UpdatePod(pod)
 		if err != nil {
 			errList = append(errList, err)
 		}
 	}
 
 	// Update OF rules for the old services in the namespace
-	for _, svc := range services {
+	for _, svc := range services.Items {
+		if !kapi.IsServiceIPSet(&svc) {
+			continue
+		}
+
 		if err = node.DeleteServiceRules(&svc); err != nil {
 			log.Error(err)
 		}
@@ -186,7 +195,7 @@ func (node *OsdnNode) updatePodNetwork(namespace string, oldNetID, netID uint32)
 }
 
 func (node *OsdnNode) watchNetNamespaces() {
-	node.registry.RunEventQueue(NetNamespaces, func(delta cache.Delta) error {
+	RunEventQueue(node.osClient, NetNamespaces, func(delta cache.Delta) error {
 		netns := delta.Object.(*osapi.NetNamespace)
 
 		log.V(5).Infof("Watch %s event for NetNamespace %q", delta.Type, netns.ObjectMeta.Name)
@@ -231,7 +240,7 @@ func isServiceChanged(oldsvc, newsvc *kapi.Service) bool {
 
 func (node *OsdnNode) watchServices() {
 	services := make(map[string]*kapi.Service)
-	node.registry.RunEventQueue(Services, func(delta cache.Delta) error {
+	RunEventQueue(node.kClient.CoreClient, Services, func(delta cache.Delta) error {
 		serv := delta.Object.(*kapi.Service)
 
 		// Ignore headless services

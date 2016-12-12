@@ -86,6 +86,9 @@ func ValidateOAuthConfig(config *api.OAuthConfig, fldPath *field.Path) Validatio
 		}
 	}
 
+	if len(redirectingIdentityProviders) == 0 {
+		validationResults.AddWarnings(field.Invalid(fldPath.Child("identityProviders"), "login", "no identity providers are configured to handle logins"))
+	}
 	if len(challengeRedirectingIdentityProviders) > 1 {
 		validationResults.AddErrors(field.Invalid(fldPath.Child("identityProviders"), "challenge", fmt.Sprintf("only one identity provider can redirect clients requesting an authentication challenge, found: %v", strings.Join(challengeRedirectingIdentityProviders, ", "))))
 	}
@@ -180,13 +183,13 @@ func ValidateIdentityProvider(identityProvider api.IdentityProvider, fldPath *fi
 			validationResults.Append(ValidateKeystoneIdentityProvider(provider, identityProvider, providerPath))
 
 		case (*api.GitHubIdentityProvider):
-			validationResults.AddErrors(ValidateGitHubIdentityProvider(provider, identityProvider.UseAsChallenger, fldPath)...)
+			validationResults.Append(ValidateGitHubIdentityProvider(provider, identityProvider.UseAsChallenger, identityProvider.MappingMethod, fldPath))
 
 		case (*api.GitLabIdentityProvider):
 			validationResults.AddErrors(ValidateGitLabIdentityProvider(provider, fldPath)...)
 
 		case (*api.GoogleIdentityProvider):
-			validationResults.AddErrors(ValidateGoogleIdentityProvider(provider, identityProvider.UseAsChallenger, fldPath)...)
+			validationResults.Append(ValidateGoogleIdentityProvider(provider, identityProvider.UseAsChallenger, identityProvider.MappingMethod, fldPath))
 
 		case (*api.OpenIDIdentityProvider):
 			validationResults.AddErrors(ValidateOpenIDIdentityProvider(provider, identityProvider, fldPath)...)
@@ -243,13 +246,11 @@ func ValidateRequestHeaderIdentityProvider(provider *api.RequestHeaderIdentityPr
 		validationResults.AddErrors(field.Required(fieldPath.Child("provider", "headers"), ""))
 	}
 	if identityProvider.UseAsChallenger && len(provider.ChallengeURL) == 0 {
-		err := field.Required(fieldPath.Child("provider", "challengeURL"), "")
-		err.Detail = "challengeURL is required if challenge=true"
+		err := field.Required(fieldPath.Child("provider", "challengeURL"), "challengeURL is required if challenge is true")
 		validationResults.AddErrors(err)
 	}
 	if identityProvider.UseAsLogin && len(provider.LoginURL) == 0 {
-		err := field.Required(fieldPath.Child("provider", "loginURL"), "")
-		err.Detail = "loginURL is required if login=true"
+		err := field.Required(fieldPath.Child("provider", "loginURL"), "loginURL is required if login=true")
 		validationResults.AddErrors(err)
 	}
 
@@ -308,28 +309,45 @@ func ValidateOAuthIdentityProvider(clientID string, clientSecret api.StringSourc
 	return allErrs
 }
 
-func ValidateGitHubIdentityProvider(provider *api.GitHubIdentityProvider, challenge bool, fieldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
+func ValidateGitHubIdentityProvider(provider *api.GitHubIdentityProvider, challenge bool, mappingMethod string, fieldPath *field.Path) ValidationResults {
+	validationResults := ValidationResults{}
 
-	allErrs = append(allErrs, ValidateOAuthIdentityProvider(provider.ClientID, provider.ClientSecret, fieldPath)...)
+	validationResults.AddErrors(ValidateOAuthIdentityProvider(provider.ClientID, provider.ClientSecret, fieldPath)...)
 
 	if challenge {
-		allErrs = append(allErrs, field.Invalid(fieldPath.Child("challenge"), challenge, "A GitHub identity provider cannot be used for challenges"))
+		validationResults.AddErrors(field.Invalid(fieldPath.Child("challenge"), challenge, "A GitHub identity provider cannot be used for challenges"))
 	}
 
-	return allErrs
+	if len(provider.Teams) > 0 && len(provider.Organizations) > 0 {
+		validationResults.AddErrors(field.Invalid(fieldPath.Child("organizations"), provider.Organizations, "specify organizations or teams, not both"))
+		validationResults.AddErrors(field.Invalid(fieldPath.Child("teams"), provider.Teams, "specify organizations or teams, not both"))
+	}
+	if len(provider.Teams) == 0 && len(provider.Organizations) == 0 && mappingMethod != string(identitymapper.MappingMethodLookup) {
+		validationResults.AddWarnings(field.Invalid(fieldPath, nil, "no organizations or teams specified, any GitHub user will be allowed to authenticate"))
+	}
+	for i, team := range provider.Teams {
+		if len(strings.Split(team, "/")) != 2 {
+			validationResults.AddErrors(field.Invalid(fieldPath.Child("teams").Index(i), team, "must be in the format <org>/<team>"))
+		}
+	}
+
+	return validationResults
 }
 
-func ValidateGoogleIdentityProvider(provider *api.GoogleIdentityProvider, challenge bool, fieldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
+func ValidateGoogleIdentityProvider(provider *api.GoogleIdentityProvider, challenge bool, mappingMethod string, fieldPath *field.Path) ValidationResults {
+	validationResults := ValidationResults{}
 
-	allErrs = append(allErrs, ValidateOAuthIdentityProvider(provider.ClientID, provider.ClientSecret, fieldPath)...)
+	validationResults.AddErrors(ValidateOAuthIdentityProvider(provider.ClientID, provider.ClientSecret, fieldPath)...)
 
 	if challenge {
-		allErrs = append(allErrs, field.Invalid(fieldPath.Child("challenge"), challenge, "A Google identity provider cannot be used for challenges"))
+		validationResults.AddErrors(field.Invalid(fieldPath.Child("challenge"), challenge, "A Google identity provider cannot be used for challenges"))
 	}
 
-	return allErrs
+	if len(provider.HostedDomain) == 0 && mappingMethod != string(identitymapper.MappingMethodLookup) {
+		validationResults.AddWarnings(field.Invalid(fieldPath, nil, "no hostedDomain specified, any Google user will be allowed to authenticate"))
+	}
+
+	return validationResults
 }
 
 func ValidateGitLabIdentityProvider(provider *api.GitLabIdentityProvider, fieldPath *field.Path) field.ErrorList {

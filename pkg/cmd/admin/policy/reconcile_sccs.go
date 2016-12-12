@@ -10,13 +10,15 @@ import (
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	kapierrors "k8s.io/kubernetes/pkg/api/errors"
-	kclient "k8s.io/kubernetes/pkg/client/unversioned"
+	kcoreclient "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/unversioned"
 	kcmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	sccutil "k8s.io/kubernetes/pkg/securitycontextconstraints/util"
 	"k8s.io/kubernetes/pkg/util/sets"
 
 	"github.com/openshift/origin/pkg/cmd/server/bootstrappolicy"
+	"github.com/openshift/origin/pkg/cmd/templates"
 	cmdutil "github.com/openshift/origin/pkg/cmd/util"
+
 	"github.com/openshift/origin/pkg/cmd/util/clientcmd"
 )
 
@@ -36,32 +38,33 @@ type ReconcileSCCOptions struct {
 	Out    io.Writer
 	Output string
 
-	SCCClient kclient.SecurityContextConstraintInterface
-	NSClient  kclient.NamespaceInterface
+	SCCClient kcoreclient.SecurityContextConstraintsInterface
+	NSClient  kcoreclient.NamespaceInterface
 }
 
-const (
-	reconcileSCCLong = `
-Replace cluster SCCs to match the recommended bootstrap policy
+var (
+	reconcileSCCLong = templates.LongDesc(`
+		Replace cluster SCCs to match the recommended bootstrap policy
 
-This command will inspect the cluster SCCs against the recommended bootstrap SCCs.
-Any cluster SCC that does not match will be replaced by the recommended SCC.
-This command will not remove any additional cluster SCCs.  By default, this command
-will not remove additional users and groups that have been granted access to the SCC and
-will preserve existing priorities (but will always reconcile unset priorities and the policy
-definition).
+		This command will inspect the cluster SCCs against the recommended bootstrap SCCs.
+		Any cluster SCC that does not match will be replaced by the recommended SCC.
+		This command will not remove any additional cluster SCCs.  By default, this command
+		will not remove additional users and groups that have been granted access to the SCC and
+		will preserve existing priorities (but will always reconcile unset priorities and the policy
+		definition).
 
-You can see which cluster SCCs have recommended changes by choosing an output type.`
+		You can see which cluster SCCs have recommended changes by choosing an output type.`)
 
-	reconcileSCCExample = `  # Display the cluster SCCs that would be modified
-  %[1]s
+	reconcileSCCExample = templates.Examples(`
+		# Display the cluster SCCs that would be modified
+	  %[1]s
 
-  # Update cluster SCCs that don't match the current defaults preserving additional grants
-  # for users and group and keeping any priorities that are already set
-  %[1]s --confirm
+	  # Update cluster SCCs that don't match the current defaults preserving additional grants
+	  # for users and group and keeping any priorities that are already set
+	  %[1]s --confirm
 
-  # Replace existing users, groups, and priorities that do not match defaults
-  %[1]s --additive-only=false --confirm`
+	  # Replace existing users, groups, and priorities that do not match defaults
+	  %[1]s --additive-only=false --confirm`)
 )
 
 // NewDefaultReconcileSCCOptions provides a ReconcileSCCOptions with default settings.
@@ -109,12 +112,12 @@ func (o *ReconcileSCCOptions) Complete(cmd *cobra.Command, f *clientcmd.Factory,
 		return kcmdutil.UsageError(cmd, "no arguments are allowed")
 	}
 
-	_, kClient, err := f.Clients()
+	_, _, kClient, err := f.Clients()
 	if err != nil {
 		return err
 	}
-	o.SCCClient = kClient.SecurityContextConstraints()
-	o.NSClient = kClient.Namespaces()
+	o.SCCClient = kClient.Core().SecurityContextConstraints()
+	o.NSClient = kClient.Core().Namespaces()
 	o.Output = kcmdutil.GetFlagString(cmd, "output")
 
 	return nil

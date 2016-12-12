@@ -6388,6 +6388,25 @@ func TestValidateServiceUpdate(t *testing.T) {
 			},
 			numErrs: 0,
 		},
+		{
+			name: "add loadBalancerSourceRanges",
+			tweakSvc: func(oldSvc, newSvc *api.Service) {
+				oldSvc.Spec.Type = api.ServiceTypeLoadBalancer
+				newSvc.Spec.Type = api.ServiceTypeLoadBalancer
+				newSvc.Spec.LoadBalancerSourceRanges = []string{"10.0.0.0/8"}
+			},
+			numErrs: 1,
+		},
+		{
+			name: "update loadBalancerSourceRanges",
+			tweakSvc: func(oldSvc, newSvc *api.Service) {
+				oldSvc.Spec.Type = api.ServiceTypeLoadBalancer
+				oldSvc.Spec.LoadBalancerSourceRanges = []string{"10.0.0.0/8"}
+				newSvc.Spec.Type = api.ServiceTypeLoadBalancer
+				newSvc.Spec.LoadBalancerSourceRanges = []string{"10.180.0.0/16"}
+			},
+			numErrs: 1,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -6511,6 +6530,11 @@ func TestValidateLimitRange(t *testing.T) {
 						Default:              getResourceList("50m", "500Mi"),
 						DefaultRequest:       getResourceList("10m", "200Mi"),
 						MaxLimitRequestRatio: getResourceList("10", ""),
+					},
+					{
+						Type: api.LimitTypePersistentVolumeClaim,
+						Max:  getStorageResourceList("10Gi"),
+						Min:  getStorageResourceList("5Gi"),
 					},
 				},
 			},
@@ -6691,6 +6715,40 @@ func TestValidateLimitRange(t *testing.T) {
 				},
 			}},
 			"must be a standard limit type or fully qualified",
+		},
+		"invalid missing required min field": {
+			api.LimitRange{ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: "foo"}, Spec: api.LimitRangeSpec{
+				Limits: []api.LimitRangeItem{
+					{
+						Type: api.LimitTypePersistentVolumeClaim,
+						Max:  getStorageResourceList("10000T"),
+					},
+				},
+			}},
+			"minimum storage value is required",
+		},
+		"invalid missing required max field": {
+			api.LimitRange{ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: "foo"}, Spec: api.LimitRangeSpec{
+				Limits: []api.LimitRangeItem{
+					{
+						Type: api.LimitTypePersistentVolumeClaim,
+						Min:  getStorageResourceList("10000T"),
+					},
+				},
+			}},
+			"maximum storage value is required",
+		},
+		"invalid min greater than max": {
+			api.LimitRange{ObjectMeta: api.ObjectMeta{Name: "abc", Namespace: "foo"}, Spec: api.LimitRangeSpec{
+				Limits: []api.LimitRangeItem{
+					{
+						Type: api.LimitTypePersistentVolumeClaim,
+						Min:  getStorageResourceList("10Gi"),
+						Max:  getStorageResourceList("1Gi"),
+					},
+				},
+			}},
+			"min value 10Gi is greater than max value 1Gi",
 		},
 	}
 

@@ -3,7 +3,7 @@ package etcd
 import (
 	"testing"
 
-	"k8s.io/kubernetes/pkg/client/unversioned/testclient"
+	kapi "k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/registry/registrytest"
@@ -18,7 +18,7 @@ import (
 
 func newStorage(t *testing.T) (*REST, *etcdtesting.EtcdTestServer) {
 	etcdStorage, server := registrytest.NewEtcdStorage(t, "")
-	storage, _, _, err := NewREST(restoptions.NewSimpleGetter(etcdStorage), testclient.NewSimpleFake())
+	storage, _, _, err := NewREST(restoptions.NewSimpleGetter(etcdStorage))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,8 +39,7 @@ func TestCreate(t *testing.T) {
 	defer server.Terminate(t)
 	test := registrytest.New(t, storage.Store)
 	valid := validDeploymentConfig()
-	valid.Name = ""
-	valid.GenerateName = "test-"
+	valid.ObjectMeta = kapi.ObjectMeta{}
 	test.TestCreate(
 		valid,
 		// invalid

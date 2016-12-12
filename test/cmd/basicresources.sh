@@ -8,6 +8,7 @@ trap os::test::junit::reconcile_output EXIT
   oc delete all,templates,secrets,pods,jobs --all
   oc delete image v1-image
   oc delete group patch-group
+  oc delete project test-project-admin
   exit 0
 ) &>/dev/null
 
@@ -26,7 +27,8 @@ os::test::junit::declare_suite_start "cmd/basicresources/versionreporting"
 os::build::get_version_vars
 os_git_regex="$( escape_regex "${OS_GIT_VERSION%%-*}" )"
 kube_git_regex="$( escape_regex "${KUBE_GIT_VERSION%%-*}" )"
-etcd_git_regex="$( escape_regex "${ETCD_GIT_VERSION%%-*}" )"
+etcd_version="$(echo "${ETCD_GIT_VERSION}" | sed -E "s/\-.*//g" | sed -E "s/v//")"
+etcd_git_regex="$( escape_regex "${etcd_version%%-*}" )"
 os::cmd::expect_success_and_text 'oc version' "oc ${os_git_regex}"
 os::cmd::expect_success_and_text 'oc version' "kubernetes ${kube_git_regex}"
 os::cmd::expect_success_and_text 'oc version' "features: Basic-Auth"
@@ -296,9 +298,10 @@ os::test::junit::declare_suite_start "cmd/basicresources/projectadmin"
 temp_config="$(mktemp -d)/tempconfig"
 os::cmd::expect_success "oc config view --raw > '${temp_config}'"
 export KUBECONFIG="${temp_config}"
-os::cmd::expect_success 'oc policy add-role-to-user admin test-user'
-os::cmd::expect_success 'oc login -u test-user -p anything'
-os::cmd::try_until_success "oc project '$(oc project -q)'"
+os::cmd::expect_success 'oc policy add-role-to-user admin project-admin'
+os::cmd::expect_success 'oc login -u project-admin -p anything'
+os::cmd::expect_success 'oc new-project test-project-admin'
+os::cmd::try_until_success "oc project test-project-admin"
 
 os::cmd::expect_success 'oc run --image=openshift/hello-openshift test'
 os::cmd::expect_success 'oc run --image=openshift/hello-openshift --generator=run-controller/v1 test2'

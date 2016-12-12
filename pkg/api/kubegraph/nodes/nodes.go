@@ -76,7 +76,11 @@ func EnsureSecretNode(g osgraph.MutableUniqueGraph, o *kapi.Secret) *SecretNode 
 	return osgraph.EnsureUnique(g,
 		SecretNodeName(o),
 		func(node osgraph.Node) graph.Node {
-			return &SecretNode{node, o, true}
+			return &SecretNode{
+				Node:    node,
+				Secret:  o,
+				IsFound: true,
+			}
 		},
 	).(*SecretNode)
 }
@@ -85,7 +89,11 @@ func FindOrCreateSyntheticSecretNode(g osgraph.MutableUniqueGraph, o *kapi.Secre
 	return osgraph.EnsureUnique(g,
 		SecretNodeName(o),
 		func(node osgraph.Node) graph.Node {
-			return &SecretNode{node, o, false}
+			return &SecretNode{
+				Node:    node,
+				Secret:  o,
+				IsFound: false,
+			}
 		},
 	).(*SecretNode)
 }
@@ -145,6 +153,24 @@ func EnsurePodTemplateSpecNode(g osgraph.MutableUniqueGraph, ptSpec *kapi.PodTem
 	g.AddEdge(ptSpecNode, podSpecNode, osgraph.ContainsEdgeKind)
 
 	return ptSpecNode
+}
+
+func EnsurePersistentVolumeClaimNode(g osgraph.MutableUniqueGraph, pvc *kapi.PersistentVolumeClaim) *PersistentVolumeClaimNode {
+	return osgraph.EnsureUnique(g,
+		PersistentVolumeClaimNodeName(pvc),
+		func(node osgraph.Node) graph.Node {
+			return &PersistentVolumeClaimNode{Node: node, PersistentVolumeClaim: pvc, IsFound: true}
+		},
+	).(*PersistentVolumeClaimNode)
+}
+
+func FindOrCreateSyntheticPVCNode(g osgraph.MutableUniqueGraph, pvc *kapi.PersistentVolumeClaim) *PersistentVolumeClaimNode {
+	return osgraph.EnsureUnique(g,
+		PersistentVolumeClaimNodeName(pvc),
+		func(node osgraph.Node) graph.Node {
+			return &PersistentVolumeClaimNode{Node: node, PersistentVolumeClaim: pvc, IsFound: false}
+		},
+	).(*PersistentVolumeClaimNode)
 }
 
 func EnsureHorizontalPodAutoscalerNode(g osgraph.MutableUniqueGraph, hpa *autoscaling.HorizontalPodAutoscaler) *HorizontalPodAutoscalerNode {

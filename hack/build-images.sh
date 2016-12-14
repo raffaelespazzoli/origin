@@ -45,10 +45,12 @@ else
   os::build::extract_tar "${OS_IMAGE_RELEASE_TAR}" "${imagedir}"
 fi
 
+! docker run --rm --privileged multiarch/qemu-user-static:register;
+
 os::util::ensure::built_binary_exists 'oc'
 
 function build() {
-  eval "oc ex dockerbuild $2 $1 ${OS_BUILD_IMAGE_ARGS:-}"
+eval "oc ex dockerbuild $2 $1 $3 ${OS_BUILD_IMAGE_ARGS:-}"
 }
 
 # Create link to file if the FS supports hardlinks, otherwise copy the file
@@ -64,7 +66,7 @@ function ln_or_cp {
 
 if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
 
-cp -Rpf "${OS_ROOT}/images" "${OS_OUTPUT}/images_arm"
+cp -Rpf "${OS_ROOT}/images" "images"
 cp -Rpf "${OS_ROOT}/examples" "${OS_OUTPUT}/examples_arm"
 
 fi
@@ -82,7 +84,7 @@ ln_or_cp "${imagedir}/dockerregistry"  images/dockerregistry/bin
 if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
 #same for arm
 # Link or copy primary binaries to the appropriate locations.
-ln_or_cp "${imagedir_arm}/openshift" "${OS_OUTPUT}/images_arm/origin/bin"
+ln_or_cp "${imagedir_arm}/openshift" "images/origin/bin"
 
 # Link or copy image binaries to the appropriate locations.
 ln_or_cp "${imagedir_arm}/pod"             "${OS_OUTPUT}/images_arm/pod/bin"
@@ -113,65 +115,66 @@ fi
 function image {
   local STARTTIME=$(date +%s)
   echo "--- $1 ---"
+  #eval "oc ex dockerbuild $2 $1 ${OS_BUILD_IMAGE_ARGS:-}"
   build $1:latest $2
   #docker build -t $1:latest $2
   docker tag $1:latest $1:${OS_RELEASE_COMMIT}
-git clean -fdx ${2%% *}
+  git clean -fdx ${2%% *}
   local ENDTIME=$(date +%s); echo "--- $1 took $(($ENDTIME - $STARTTIME)) seconds ---"
   echo
   echo
 }
 
-# images that depend on scratch / centos
-image openshift/origin-pod                   images/pod
-image openshift/openvswitch                  images/openvswitch
-# images that depend on openshift/origin-base
-image openshift/origin                       images/origin
-image openshift/origin-haproxy-router        images/router/haproxy
-image openshift/origin-keepalived-ipfailover images/ipfailover/keepalived
-image openshift/origin-docker-registry       images/dockerregistry
-image openshift/origin-egress-router         images/router/egress
-# images that depend on openshift/origin
-image openshift/origin-gitserver             examples/gitserver
-image openshift/origin-deployer              images/deployer
-image openshift/origin-recycler              images/recycler
-image openshift/origin-docker-builder        images/builder/docker/docker-builder
-image openshift/origin-sti-builder           images/builder/docker/sti-builder
-image openshift/origin-f5-router             images/router/f5
-image openshift/node                         images/node
-
-# extra images (not part of infrastructure)
-image openshift/hello-openshift              examples/hello-openshift
-docker build --no-cache -t openshift/deployment-example:v1 examples/deployment
-docker build --no-cache -t openshift/deployment-example:v2 -f examples/deployment/Dockerfile.v2 examples/deployment
+## images that depend on scratch / centos
+#image openshift/origin-pod                   images/pod
+#image openshift/openvswitch                  images/openvswitch
+## images that depend on openshift/origin-base
+#image openshift/origin                       images/origin
+#image openshift/origin-haproxy-router        images/router/haproxy
+#image openshift/origin-keepalived-ipfailover images/ipfailover/keepalived
+#image openshift/origin-docker-registry       images/dockerregistry
+#image openshift/origin-egress-router         images/router/egress
+## images that depend on openshift/origin
+#image openshift/origin-gitserver             examples/gitserver
+#image openshift/origin-deployer              images/deployer
+#image openshift/origin-recycler              images/recycler
+#image openshift/origin-docker-builder        images/builder/docker/docker-builder
+#image openshift/origin-sti-builder           images/builder/docker/sti-builder
+#image openshift/origin-f5-router             images/router/f5
+#image openshift/node                         images/node
+#
+## extra images (not part of infrastructure)
+#image openshift/hello-openshift              examples/hello-openshift
+#docker build --no-cache -t openshift/deployment-example:v1 examples/deployment
+#docker build --no-cache -t openshift/deployment-example:v2 -f examples/deployment/Dockerfile.v2 examples/deployment
 
 
 #arm
-if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
+#if [[ -d "${OS_ROOT}"/_output/local/bin/linux/arm ]]; then
 ! docker run --rm --privileged multiarch/qemu-user-static:register;
 # images that depend on scratch / centos
-image raffaelespazzoli/origin-pod-arm                   "${OS_OUTPUT}/images_arm/pod --dockerfile=${OS_OUTPUT}/images_arm/pod/Dockerfile.armhf"
-image raffaelespazzoli/openvswitch-arm                  "${OS_OUTPUT}/images_arm/openvswitch --dockerfile=${OS_OUTPUT}/images_arm/openvswitch/Dockerfile.armhf"
+image raffaelespazzoli/origin-pod-arm                   "images/pod --dockerfile=images/pod/Dockerfile.armhf"
+image raffaelespazzoli/openvswitch-arm                  "images/openvswitch --dockerfile=images/openvswitch/Dockerfile.armhf"
 # images that depend on openshift/origin-base
-image raffaelespazzoli/origin-arm                       "${OS_OUTPUT}/images_arm/origin --dockerfile=${OS_OUTPUT}/images_arm/origin/Dockerfile.armhf"
-image raffaelespazzoli/origin-haproxy-router-arm        "${OS_OUTPUT}/images_arm/router/haproxy --dockerfile=${OS_OUTPUT}/images_arm/router/haproxy/Dockerfile.armhf"
-image raffaelespazzoli/origin-keepalived-ipfailover-arm "${OS_OUTPUT}/images_arm/ipfailover/keepalived --dockerfile=${OS_OUTPUT}/images_arm/ipfailover/keepalived/Dockerfile.armhf"
-image raffaelespazzoli/origin-docker-registry-arm       "${OS_OUTPUT}/images_arm/dockerregistry --dockerfile=${OS_OUTPUT}/images_arm/dockerregistry/Dockerfile.armhf"
-image raffaelespazzoli/origin-egress-router-arm         "${OS_OUTPUT}/images_arm/router/egress --dockerfile=${OS_OUTPUT}/images_arm/router/egress/Dockerfile.armhf"
-image raffaelespazzoli/origin-gitserver-arm             "${OS_OUTPUT}/examples_arm/gitserver --dockerfile=${OS_OUTPUT}/examples_arm/gitserver/Dockerfile.armhf"
+image raffaelespazzoli/origin-arm                       "images/origin --dockerfile=images/origin/Dockerfile.armhf"
+image raffaelespazzoli/origin-haproxy-router-arm        "images/router/haproxy --dockerfile=images/router/haproxy/Dockerfile.armhf"
+image raffaelespazzoli/origin-keepalived-ipfailover-arm "images/ipfailover/keepalived --dockerfile=images/ipfailover/keepalived/Dockerfile.armhf"
+image raffaelespazzoli/origin-docker-registry-arm       "images/dockerregistry --dockerfile=images/dockerregistry/Dockerfile.armhf"
+image raffaelespazzoli/origin-egress-router-arm         "images/router/egress --dockerfile=images/router/egress/Dockerfile.armhf"
+#image raffaelespazzoli/origin-gitserver-arm             "examples/gitserver --dockerfile=examples/gitserver/Dockerfile.armhf"
 # images that depend on openshift/origin
-image raffaelespazzoli/origin-deployer-arm              "${OS_OUTPUT}/images_arm/deployer --dockerfile=${OS_OUTPUT}/images_arm/deployer/Dockerfile.armhf"
-image raffaelespazzoli/origin-recycler-arm              "${OS_OUTPUT}/images_arm/recycler --dockerfile=${OS_OUTPUT}/images_arm/recycler/Dockerfile.armhf"
-image raffaelespazzoli/origin-docker-builder-arm        "${OS_OUTPUT}/images_arm/builder/docker/docker-builder --dockerfile=${OS_OUTPUT}/images_arm/builder/docker/docker-builder/Dockerfile.armhf"
-image raffaelespazzoli/origin-sti-builder-arm           "${OS_OUTPUT}/images_arm/builder/docker/sti-builder --dockerfile=${OS_OUTPUT}/images_arm/builder/docker/sti-builder/Dockerfile.armhf"
-image raffaelespazzoli/origin-f5-router-arm             "${OS_OUTPUT}/images_arm/router/f5 --dockerfile=${OS_OUTPUT}/images_arm/router/f5/Dockerfile.armhf"
-image raffaelespazzoli/node-arm                         "${OS_OUTPUT}/images_arm/node --dockerfile=${OS_OUTPUT}/images_arm/node/Dockerfile.armhf"
+image raffaelespazzoli/origin-deployer-arm              "images/deployer --dockerfile=images/deployer/Dockerfile.armhf"
+image raffaelespazzoli/origin-recycler-arm              "images/recycler --dockerfile=images/recycler/Dockerfile.armhf"
+image raffaelespazzoli/origin-docker-builder-arm        "images/builder/docker/docker-builder --dockerfile=images/builder/docker/docker-builder/Dockerfile.armhf"
+image raffaelespazzoli/origin-sti-builder-arm           "images/builder/docker/sti-builder --dockerfile=images/builder/docker/sti-builder/Dockerfile.armhf"
+image raffaelespazzoli/origin-f5-router-arm             "images/router/f5 --dockerfile=images/router/f5/Dockerfile.armhf"
+image raffaelespazzoli/node-arm                         "images/node --dockerfile=images/node/Dockerfile.armhf"
 
 # extra images (not part of infrastructure)
-image raffaelespazzoli/hello-openshift-arm              "${OS_OUTPUT}/examples_arm/hello-openshift --dockerfile=${OS_OUTPUT}/examples_arm/hello-openshift/Dockerfile.armhf"
-docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v1 -f "${OS_OUTPUT}/examples_arm/deployment/Dockerfile.armhf" "${OS_OUTPUT}/examples_arm/deployment"
-docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v2 -f "${OS_OUTPUT}/examples_arm/deployment/Dockerfile.v2.armhf" "${OS_OUTPUT}/examples_arm/deployment"
-fi
+#image raffaelespazzoli/hello-openshift-arm              "examples/hello-openshift --dockerfile=examples/hello-openshift/Dockerfile.armhf"
+#docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v1 -f "examples/deployment/Dockerfile.armhf" "example/deployment"
+#docker build --no-cache -t raffaelespazzoli/deployment-example-arm:v2 -f "examples/deployment/Dockerfile.v2.armhf" "examples/deployment"
+#fi
 
 
 echo

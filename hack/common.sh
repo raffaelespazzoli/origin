@@ -633,7 +633,8 @@ readonly -f os::build::make_openshift_binary_symlinks
 #   OS_PRIMARY_RELEASE_TAR
 #   OS_IMAGE_RELEASE_TAR
 function os::build::detect_local_release_tars() {
-  local platform="$1"
+  #local platform="$1"
+  local platform="linux-arm64"
 
   if [[ ! -d "${OS_LOCAL_RELEASEPATH}" ]]; then
     echo "There are no release artifacts in ${OS_LOCAL_RELEASEPATH}"
